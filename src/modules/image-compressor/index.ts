@@ -6,27 +6,23 @@ import * as svgo from "svgo";
 import * as imageSize from "image-size";
 import { nanoid } from "nanoid";
 import WebviewLoader from "./webview-loader";
-import { getAvailableImageDirectoryStructure, isAvailableSvgoExt, isAvailableTinypngExt } from "./utils";
+import { getAvailableImageDirectoryStructure, isAvailableSvgoExt, isAvailableTinypngExt, isDev } from "./utils";
 import { WebviewIPCSignal, type IPCMessage, ExtensionIPCSignal, WorkspaceNode, ExecutedStatus } from "./typing";
 import logger from "./utils/logger";
+import type { ISizeCalculationResult } from "image-size/dist/types/interface";
 
 const tinify = Tinify.default;
 const sizeOf = util.promisify(imageSize.default);
-import type { ISizeCalculationResult } from "image-size/dist/types/interface";
 
-logger.info("env", process.env.NODE_ENV)
+logger.info("env", process.env.NODE_ENV);
 
 export default class ImageCompressor {
-
   private tempFolder: vscode.Uri;
-  private tinypngAPIKey = "";
-  private readonly commandKey = "flat-copilot.image-effecter.compress";
   private vsCodeContext: vscode.ExtensionContext;
-  private webviewTempFolderMap = new WeakMap<vscode.Webview, vscode.Uri>;
-  private webviewIdTempFolderMap = new Map<string, vscode.Uri>;
+  private webviewTempFolderMap = new WeakMap<vscode.Webview, vscode.Uri>();
+  private webviewIdTempFolderMap = new Map<string, vscode.Uri>();
   private readonly disposables: vscode.Disposable[] = [];
   private static instance: ImageCompressor | undefined;
-
 
   constructor(context: vscode.ExtensionContext) {
     logger.info("vsCodeContext.extensionFsPath", context.extensionUri.fsPath);
@@ -46,20 +42,19 @@ export default class ImageCompressor {
   private tinypngApiKeyValidate() {
     return new Promise<Boolean>(async (resolve, reject) => {
       try {
-        const tinypngApiKey = vscode.workspace.getConfiguration('mikas').get<string>('tinypngApiKey') || "";
+        const tinypngApiKey = vscode.workspace.getConfiguration("mikas").get<string>("tinypngApiKey") || "";
         logger.info("tinypngApiKey", tinypngApiKey);
         if (tinypngApiKey) {
           tinify.key = tinypngApiKey;
           try {
             await tinify.validate();
-            this.tinypngAPIKey = tinypngApiKey;
             vscode.window.showInformationMessage(`TinyPNG API Key 校验成功，当前压缩额度已使用${tinify.compressionCount}次`);
             resolve(true);
           } catch (e) {
-            throw new Error('TinyPNG API Key 校验失败，请确保Key有效或重新创建。');
+            throw new Error("TinyPNG API Key 校验失败，请确保Key有效或重新创建。");
           }
         } else {
-          throw new Error('TinyPNG: API validation failed. Be sure that you filled out tinypng.apiKey setting already.');
+          throw new Error("TinyPNG: API validation failed. Be sure that you filled out tinypng.apiKey setting already.");
         }
       } catch (e) {
         vscode.window.showErrorMessage(e.message);
@@ -75,13 +70,14 @@ export default class ImageCompressor {
       vscode.window.showErrorMessage("No open workspace folder");
       return;
     }
-    const tempFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, ".flat-copliot");
+    const tempFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, ".mikas");
+    // const tempFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, ".mikas");
     try {
       await vscode.workspace.fs.createDirectory(tempFolderUri);
       this.tempFolder = tempFolderUri;
-      logger.info('createRootTempFolder', tempFolderUri.fsPath);
+      logger.info("createRootTempFolder", tempFolderUri.fsPath);
     } catch (error) {
-      logger.error('createRootTempFolder', error);
+      logger.error("createRootTempFolder", error);
     }
   }
 
@@ -95,7 +91,7 @@ export default class ImageCompressor {
   private webviewInit() {
     const disposable = vscode.commands.registerCommand("mikas.compress", async (entry: vscode.Uri, others: vscode.Uri[]) => {
       const tinypngApiKeyValid = await this.tinypngApiKeyValidate();
-      if (!tinypngApiKeyValid) return
+      if (!tinypngApiKeyValid) return;
       const { webviewPanel, webviewId } = this.createWebviewPanel();
       webviewPanel.onDidDispose(() => {
         this.webviewDestroy(webviewId);
@@ -103,19 +99,19 @@ export default class ImageCompressor {
       this.setWebviewMessageListener(webviewPanel.webview);
       let treePromises;
       if (others.length) {
-        treePromises = others.map<Promise<WorkspaceNode>>(uri => getAvailableImageDirectoryStructure(uri, webviewPanel.webview));
+        treePromises = others.map<Promise<WorkspaceNode>>((uri) => getAvailableImageDirectoryStructure(uri, webviewPanel.webview));
       } else {
         treePromises = [getAvailableImageDirectoryStructure(entry, webviewPanel.webview)];
       }
-      const treeData = (await (Promise.all<WorkspaceNode>(treePromises))).filter(Boolean);
+      const treeData = (await Promise.all<WorkspaceNode>(treePromises)).filter(Boolean);
       logger.info("treeData", treeData);
       webviewPanel.webview.postMessage({
         signal: ExtensionIPCSignal.Init,
         payload: {
-          workspace: treeData
-        }
+          workspace: treeData,
+        },
       });
-      const tempDir = vscode.Uri.joinPath(this.tempFolder, Date.now() + '');
+      const tempDir = vscode.Uri.joinPath(this.tempFolder, Date.now() + "");
       await vscode.workspace.fs.createDirectory(tempDir);
       !this.webviewTempFolderMap.has(webviewPanel.webview) && this.webviewTempFolderMap.set(webviewPanel.webview, tempDir);
       !this.webviewIdTempFolderMap.has(webviewId) && this.webviewIdTempFolderMap.set(webviewId, tempDir);
@@ -128,7 +124,7 @@ export default class ImageCompressor {
       const tempDir = this.webviewIdTempFolderMap.get(webviewId);
       await vscode.workspace.fs.delete(tempDir, {
         recursive: true,
-        useTrash: false
+        useTrash: false,
       });
       logger.info("webviewDestroy", `${webviewId} tempFolder has deleted`);
     } catch (e) {
@@ -141,11 +137,15 @@ export default class ImageCompressor {
    * @param files
    * @returns
    */
-  private createCompressTaskQueue(files: { key: string, fsPath: string, ext: string }[], tempUri: vscode.Uri) {
+  private createCompressTaskQueue(files: { key: string; fsPath: string; ext: string }[], tempUri: vscode.Uri) {
     return files.map<() => Promise<any> | any>((file) => {
-      if (isAvailableTinypngExt(file.ext)) { return () => this.tinifyCompress(file.fsPath, tempUri); }
-      else if (isAvailableSvgoExt(file.ext)) { return () => this.svgoCompress(file.fsPath, tempUri); }
-      else { return () => Promise.resolve(); }
+      if (isAvailableTinypngExt(file.ext)) {
+        return () => this.tinifyCompress(file.fsPath, tempUri);
+      } else if (isAvailableSvgoExt(file.ext)) {
+        return () => this.svgoCompress(file.fsPath, tempUri);
+      } else {
+        return () => Promise.resolve();
+      }
     });
   }
 
@@ -165,7 +165,8 @@ export default class ImageCompressor {
       }
       const task = tasks[i++]; // 获取新的任务项
       const p = Promise.resolve()
-        .then(() => task()).then(res => {
+        .then(() => task())
+        .then((res) => {
           cb(res);
           return res;
         });
@@ -191,7 +192,6 @@ export default class ImageCompressor {
     return enqueue().then(() => Promise.all(ret));
   }
 
-
   /**
    * @description tinypng压缩
    * @param fsPath 文件路径
@@ -199,31 +199,28 @@ export default class ImageCompressor {
    */
   private tinifyCompress(fsPath: string, tempUri: vscode.Uri) {
     return new Promise<{
-      key: string,
-      sourceFsPath: string,
-      destinationFsPath: string,
-      optimizedSize: number
-      optimizedDimensions: ISizeCalculationResult
+      key: string;
+      sourceFsPath: string;
+      destinationFsPath: string;
+      optimizedSize: number;
+      optimizedDimensions: ISizeCalculationResult;
     }>((resolve, reject) => {
       try {
-        const postfix = vscode.workspace.getConfiguration('mikas').get<string>('compressedFilePostfix') || "";
+        const postfix = vscode.workspace.getConfiguration("mikas").get<string>("compressedFilePostfix") || "";
         const parsedPath = path.parse(fsPath);
-        const destinationFsPath = path.join(
-          tempUri.fsPath,
-          `${parsedPath.name}${postfix}${parsedPath.ext}`
-        );
+        const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
         tinify.fromFile(fsPath).toFile(destinationFsPath, async (error, data) => {
           if (error) {
             if (error instanceof tinify.AccountError) {
-              throw new Error('[AccountError]: Authentication failed. Have you set the API Key? Verify your API key and account limit.');
+              throw new Error("[AccountError]: Authentication failed. Have you set the API Key? Verify your API key and account limit.");
             } else if (error instanceof tinify.ClientError) {
-              throw new Error('[ClientError]: Check your source image and request options.');
+              throw new Error("[ClientError]: Check your source image and request options.");
             } else if (error instanceof tinify.ServerError) {
-              throw new Error('[ServerError]: Temporary issue with the Tinify API,TinyPNG API is currently not available.');
+              throw new Error("[ServerError]: Temporary issue with the Tinify API,TinyPNG API is currently not available.");
             } else if (error instanceof tinify.ConnectionError) {
-              throw new Error('[ConnectionError]: Network issue occurred. Please check your internet connectivity.');
+              throw new Error("[ConnectionError]: Network issue occurred. Please check your internet connectivity.");
             } else {
-              throw new Error('[UnknownError]: Something else went wrong, unrelated to the Tinify API. Please try again later.');
+              throw new Error("[UnknownError]: Something else went wrong, unrelated to the Tinify API. Please try again later.");
             }
           } else {
             const stat = await vscode.workspace.fs.stat(vscode.Uri.parse(destinationFsPath));
@@ -251,14 +248,11 @@ export default class ImageCompressor {
   private async svgoCompress(fsPath: string, tempUri: vscode.Uri) {
     return new Promise(async (resolve, reject) => {
       try {
-        const postfix = vscode.workspace.getConfiguration('mikas').get<string>('compressedFilePostfix') || "";
+        const postfix = vscode.workspace.getConfiguration("mikas").get<string>("compressedFilePostfix") || "";
         const svgBuffer = await vscode.workspace.fs.readFile(vscode.Uri.parse(fsPath));
         const output = svgo.optimize(svgBuffer.toString(), {});
         const parsedPath = path.parse(fsPath);
-        const destinationFsPath = path.join(
-          tempUri.fsPath,
-          `${parsedPath.name}${postfix}${parsedPath.ext}`
-        );
+        const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
         const destinationUri = vscode.Uri.parse(destinationFsPath);
         await vscode.workspace.fs.writeFile(destinationUri, Buffer.from(output.data));
         const stat = await vscode.workspace.fs.stat(destinationUri);
@@ -282,40 +276,45 @@ export default class ImageCompressor {
    * @param payload
    * @param senderWebview
    */
-  private async handleCompressFiles(payload: {
-    files: Array<{ key: string; fsPath: string; ext: string }>
-  }, senderWebview: vscode.Webview) {
+  private async handleCompressFiles(
+    payload: {
+      files: Array<{ key: string; fsPath: string; ext: string }>;
+    },
+    senderWebview: vscode.Webview
+  ) {
     logger.info("handleCompressFiles", payload);
     const { files = [] } = payload;
-    const statusBarItem = vscode.window.createStatusBarItem(
-      vscode.StatusBarAlignment.Left
-    );
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
     try {
       const tempUri = this.webviewTempFolderMap.get(senderWebview) || this.tempFolder;
       const tasksQueue = this.createCompressTaskQueue(files, tempUri);
-      const concurrency = vscode.workspace.getConfiguration('mikas').get<string>('concurrency') || 6;
-      const result = await this.consumeCompressTaskQueue(tasksQueue, (res) => {
-        statusBarItem.text = `${res.sourceFsPath} compress`;
-        statusBarItem.show();
-        senderWebview.postMessage({
-          signal: ExtensionIPCSignal.Compressed,
-          payload: {
-            status: ExecutedStatus.Fulfilled,
-            data: {
-              ...res,
-              optimizedWebviewUri: senderWebview.asWebviewUri(vscode.Uri.parse(res.destinationFsPath)).toString()
+      const concurrency = vscode.workspace.getConfiguration("mikas").get<string>("concurrency") || 6;
+      const result = await this.consumeCompressTaskQueue(
+        tasksQueue,
+        (res) => {
+          statusBarItem.text = `${res.sourceFsPath} compress`;
+          statusBarItem.show();
+          senderWebview.postMessage({
+            signal: ExtensionIPCSignal.Compressed,
+            payload: {
+              status: ExecutedStatus.Fulfilled,
+              data: {
+                ...res,
+                optimizedWebviewUri: senderWebview.asWebviewUri(vscode.Uri.parse(res.destinationFsPath)).toString(),
+              },
+              error: "",
             },
-            error: ""
-          }
-        });
-      }, Number(concurrency));
+          });
+        },
+        Number(concurrency)
+      );
       senderWebview.postMessage({
         signal: ExtensionIPCSignal.AllCompressed,
         payload: {
           status: ExecutedStatus.Fulfilled,
           data: result,
-          error: ""
-        }
+          error: "",
+        },
       });
       vscode.window.showInformationMessage(`${files.length}张图片已压缩完成！`);
       statusBarItem.dispose();
@@ -325,25 +324,28 @@ export default class ImageCompressor {
         payload: {
           status: ExecutedStatus.Rejected,
           data: [],
-          error: e.message
-        }
+          error: e.message,
+        },
       });
     } finally {
       statusBarItem.dispose();
     }
   }
 
-  private async handleSaveCommand(payload: {
-    files: {
-      key: string,
-      sourceFsPath: string,
-      tempFsPath: string,
-    }[]
-  }, senderWebview: vscode.Webview) {
+  private async handleSaveCommand(
+    payload: {
+      files: {
+        key: string;
+        sourceFsPath: string;
+        tempFsPath: string;
+      }[];
+    },
+    senderWebview: vscode.Webview
+  ) {
     try {
       const { files = [] } = payload;
-      const forceOverwrite = vscode.workspace.getConfiguration('mikas').get<string>('forceOverwrite') || "";
-      const taskPromises = files.map(file => {
+      const forceOverwrite = vscode.workspace.getConfiguration("mikas").get<string>("forceOverwrite") || "";
+      const taskPromises = files.map((file) => {
         return new Promise((resolve, reject) => {
           const tempUri = vscode.Uri.parse(file.tempFsPath);
           let sourceUri;
@@ -360,7 +362,7 @@ export default class ImageCompressor {
                 status: ExecutedStatus.Fulfilled,
                 key: file.key,
                 overwrite: forceOverwrite,
-                error: ""
+                error: "",
               });
             })
             .catch((e) => {
@@ -368,7 +370,7 @@ export default class ImageCompressor {
                 status: ExecutedStatus.Rejected,
                 key: file.key,
                 overwrite: forceOverwrite,
-                error: e.message
+                error: e.message,
               });
             });
         });
@@ -380,8 +382,8 @@ export default class ImageCompressor {
         payload: {
           status: ExecutedStatus.Fulfilled,
           data: res,
-          error: ""
-        }
+          error: "",
+        },
       });
       vscode.window.showInformationMessage(`${res.length} pictures operation completed`);
     } catch (e) {
@@ -391,8 +393,8 @@ export default class ImageCompressor {
         payload: {
           status: ExecutedStatus.Rejected,
           data: [],
-          error: e.message
-        }
+          error: e.message,
+        },
       });
     }
   }
@@ -402,43 +404,39 @@ export default class ImageCompressor {
    * @returns
    */
   private createWebviewPanel() {
-    const allWorkspaceUri = vscode.workspace.workspaceFolders.map(i => i.uri);
-    const panel = vscode.window.createWebviewPanel(
-      'mikas',
-      'Mikas - Image Compressor',
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-        localResourceRoots: [
-          process.env.NODE_ENV === "development" ? vscode.Uri.joinPath(this.vsCodeContext.extensionUri, 'src', 'modules', 'image-compressor', 'webview', 'dist') : vscode.Uri.joinPath(this.vsCodeContext.extensionUri, 'dist', 'image-compressor-dist'),
-          ...allWorkspaceUri
-        ],
-      }
-    );
+    const allWorkspaceUri = vscode.workspace.workspaceFolders.map((i) => i.uri);
+    const panel = vscode.window.createWebviewPanel("mikas", "Mikas - Image Compressor", vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      localResourceRoots: [
+        isDev
+          ? vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "src", "modules", "image-compressor", "webview", "dist")
+          : vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "dist", "image-compressor-dist"),
+        ...allWorkspaceUri,
+      ],
+    });
+    panel.iconPath = isDev
+      ? vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "assets", "icon.png")
+      : vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "dist", "assets", "icon.png");
     const webviewLoader = new WebviewLoader(this.vsCodeContext, panel.webview, {
-      htmlEntry: process.env.NODE_ENV === "development" ? ['src', 'modules', 'image-compressor', 'webview', 'dist', 'index.html'] : ['dist', 'image-compressor-dist', 'index.html'],
-      distDir: process.env.NODE_ENV === "development" ? ['src', 'modules', 'image-compressor', 'webview', 'dist'] : ['dist', 'image-compressor-dist']
+      htmlEntry: isDev ? ["src", "modules", "image-compressor", "webview", "dist", "index.html"] : ["dist", "image-compressor-dist", "index.html"],
+      distDir: isDev ? ["src", "modules", "image-compressor", "webview", "dist"] : ["dist", "image-compressor-dist"],
     });
     panel.webview.html = webviewLoader.html;
     return {
       webviewPanel: panel,
-      webviewId: nanoid()
+      webviewId: nanoid(),
     };
   }
 
-  private async handleOpenFileCommand(payload: {
-    file: string
-  }) {
-    logger.info("handleOpenFileCommand", payload)
+  private async handleOpenFileCommand(payload: { file: string }) {
+    logger.info("handleOpenFileCommand", payload);
     const fileUri = vscode.Uri.parse(`vscode://file${payload.file}`);
     vscode.env.openExternal(fileUri);
   }
 
-  private handleOpenFileInExplorerCommand(payload: {
-    file: string
-  }) {
-    logger.info("handleOpenFileInExplorer", payload)
+  private handleOpenFileInExplorerCommand(payload: { file: string }) {
+    logger.info("handleOpenFileInExplorer", payload);
     const fileUri = vscode.Uri.parse(payload.file);
     vscode.env.openExternal(fileUri);
   }

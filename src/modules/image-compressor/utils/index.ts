@@ -2,9 +2,12 @@ import vscode, { Uri, Webview } from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { FileType, type DirectoryStructureNode, ImageDirectoryStructureNode, CompressedState, WorkspaceNode } from "@image-compressor/typing";
-import * as util from "util"
-import * as imageSize from "image-size"
-const sizeOf = util.promisify(imageSize.default)
+import * as util from "util";
+import * as imageSize from "image-size";
+const sizeOf = util.promisify(imageSize.default);
+
+export const isDev = process.env.NODE_ENV === "development";
+export const isProduction = process.env.NODE_ENV === "production";
 
 export function getWebviewUri(webview: Webview, extensionUri: Uri, ...pathList: string[]) {
   return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList)).toString();
@@ -30,7 +33,7 @@ export function isFileSync(path: string) {
 
 export async function isDirectory(uri: vscode.Uri) {
   const stat = await vscode.workspace.fs.stat(uri);
-  return stat.type === vscode.FileType.Directory
+  return stat.type === vscode.FileType.Directory;
 }
 
 export function isDirectorySync(path: string) {
@@ -38,50 +41,50 @@ export function isDirectorySync(path: string) {
 }
 
 export function isAvailableTinypngExt(filename: string) {
-  return /\.(png|jpg|jpeg|webp)$/ig.test(filename)
+  return /\.(png|jpg|jpeg|webp)$/gi.test(filename);
 }
 
 export function isAvailableSvgoExt(filename: string) {
-  return /\.(svg)$/ig.test(filename)
+  return /\.(svg)$/gi.test(filename);
 }
 
 export function isAvailableImage(filename: string) {
-  return isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename)
+  return isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename);
 }
-
 
 /**
  * @description 获取目录结构树
  * @param uri 入口
  * @param filter 文件过滤器
  * @param parentUri 父目录
- * @returns 
+ * @returns
  */
 export async function getDirectoryStructure<T>(
   uri: vscode.Uri,
   parentUri: vscode.Uri = vscode.Uri.parse("/"),
   filter?: (fsPath: string) => Boolean,
-  mapped?: (node: DirectoryStructureNode) => Promise<DirectoryStructureNode & T>,
+  mapped?: (node: DirectoryStructureNode) => Promise<DirectoryStructureNode & T>
 ): Promise<DirectoryStructureNode & T> {
   filter = filter || (() => true);
   mapped = mapped || ((node) => Promise.resolve(node) as Promise<DirectoryStructureNode & T>);
-  const info = path.parse(uri.fsPath)
+  const info = path.parse(uri.fsPath);
 
   if (await isFile(uri)) {
-    const stat = await vscode.workspace.fs.stat(uri)
-    return filter(uri.fsPath) ? await mapped({
-      key: uri.fsPath,
-      title: info.base,
-      isLeaf: true,
-      name: info.base,
-      fsPath: uri.fsPath,
-      size: stat.size,
-      type: FileType.File,
-      parsedInfo: info,
-      parentPath: parentUri.fsPath
-    }) : undefined;
+    const stat = await vscode.workspace.fs.stat(uri);
+    return filter(uri.fsPath)
+      ? await mapped({
+          key: uri.fsPath,
+          title: info.base,
+          isLeaf: true,
+          name: info.base,
+          fsPath: uri.fsPath,
+          size: stat.size,
+          type: FileType.File,
+          parsedInfo: info,
+          parentPath: parentUri.fsPath,
+        })
+      : undefined;
   } else if (await isDirectory(uri)) {
-
     const directoryStructure: DirectoryStructureNode = {
       key: uri.fsPath,
       title: info.base,
@@ -91,30 +94,32 @@ export async function getDirectoryStructure<T>(
       type: FileType.Directory,
       parsedInfo: info,
       children: [],
-      parentPath: parentUri.fsPath
+      parentPath: parentUri.fsPath,
     };
 
     const entries = await vscode.workspace.fs.readDirectory(uri);
     for (const [name, type] of entries) {
       const entryUri = vscode.Uri.joinPath(uri, name);
-      const info = path.parse(entryUri.fsPath)
+      const info = path.parse(entryUri.fsPath);
       if (type === vscode.FileType.Directory) {
         const childStructure = await getDirectoryStructure(entryUri, uri, filter, mapped);
         childStructure && directoryStructure.children.push(childStructure);
       } else {
-        const stat = await vscode.workspace.fs.stat(entryUri)
+        const stat = await vscode.workspace.fs.stat(entryUri);
         if (filter(entryUri.fsPath)) {
-          directoryStructure.children.push(await mapped({
-            key: entryUri.fsPath,
-            title: name,
-            isLeaf: true,
-            name: name,
-            fsPath: entryUri.fsPath,
-            size: stat.size,
-            type: FileType.File,
-            parsedInfo: info,
-            parentPath: uri.fsPath
-          }));
+          directoryStructure.children.push(
+            await mapped({
+              key: entryUri.fsPath,
+              title: name,
+              isLeaf: true,
+              name: name,
+              fsPath: entryUri.fsPath,
+              size: stat.size,
+              type: FileType.File,
+              parsedInfo: info,
+              parentPath: uri.fsPath,
+            })
+          );
         }
       }
     }
@@ -127,12 +132,12 @@ export async function getDirectoryStructure<T>(
  * @default 获取可处理图片的目录结构,生成节点树
  * @param uri 入口
  * @param webview webview实例
- * @param parentUri 父目录 
- * @returns 
+ * @param parentUri 父目录
+ * @returns
  */
 export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webview: vscode.Webview, parentUri?: vscode.Uri): Promise<WorkspaceNode> {
   return getDirectoryStructure<ImageDirectoryStructureNode>(uri, parentUri, isAvailableImage, async (node: DirectoryStructureNode) => {
-    const dimensions = await sizeOf(node.fsPath)
+    const dimensions = await sizeOf(node.fsPath);
     return {
       compressedState: CompressedState.IDLE,
       sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),
@@ -148,6 +153,6 @@ export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webvi
         height: 0,
       },
       ...node,
-    }
-  })
+    };
+  });
 }
