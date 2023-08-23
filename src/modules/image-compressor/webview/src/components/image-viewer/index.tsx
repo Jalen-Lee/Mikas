@@ -35,7 +35,7 @@ export default function ImageViewer(props: ImageViewerProps) {
       <span className="text-[16px]">{title}</span>
     </header>
     <main className="flex flex-1 justify-center items-center">
-      <img src={src} alt="img" className="aspect-auto object-contain" style={{
+      <img src={src} alt="img" className="aspect-auto object-contain " style={{
         backgroundSize:"16px 16px",
         backgroundPosition:"0 0, 8px 8px",
         backgroundImage:"linear-gradient(45deg, rgb(20, 20, 20) 25%, transparent 25%, transparent 75%, rgb(20, 20, 20) 75%, rgb(20, 20, 20)), linear-gradient(45deg, rgb(20, 20, 20) 25%, transparent 25%, transparent 75%, rgb(20, 20, 20) 75%, rgb(20, 20, 20))"

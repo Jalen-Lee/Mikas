@@ -52,6 +52,12 @@ export function isAvailableImage(filename: string) {
   return isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename);
 }
 
+export function sleep(time) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, time);
+  });
+}
+
 /**
  * @description 获取目录结构树
  * @param uri 入口

@@ -1,4 +1,4 @@
-import {HTMLAttributes, useEffect, useMemo, useRef, useState} from 'react'
+import {HTMLAttributes, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react'
 import {VSCodeButton} from "@vscode/webview-ui-toolkit/react";
 import Splitter, {SplitDirection} from "@devbookhq/splitter";
 import "rc-tree/assets/index.css"
@@ -22,7 +22,7 @@ import {
   CompressedState,
   ExecutedStatus,
   ExtensionIPCSignal,
-  FileType,
+  FileType, IPCMessage,
   WebviewIPCSignal,
   WorkspaceNode
 } from "../../typing";
@@ -107,6 +107,10 @@ function App() {
       const node = workspaceNodeMap.get(file.key)
       if (node) {
         file.compressedState = CompressedState.PENDING;
+        file.optimizedFsPath = "";
+        file.optimizedSize = 0;
+        file.optimizedWebviewUri = "";
+        file.optimizedDimensions = {width: 0,height:0}
         file.disableCheckbox = true;
         workspaceNodeMap.set(file.key, node)
       }
@@ -261,12 +265,10 @@ function App() {
     setIsSaving(false)
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.addEventListener('message', event => {
-      const message = event.data;
-      console.group(`message => ${message.signal}`)
-      console.log("data", message)
-      console.groupEnd()
+      const message:IPCMessage = event.data;
+      logger.info(message.signal,message)
       const {signal, payload} = message;
       switch (signal) {
         case ExtensionIPCSignal.Init:
@@ -334,63 +336,61 @@ function App() {
   return (
     <>
       <section id="app" className="flex flex-col">
-        <main className="h-[calc(100%-48px)] flex-1 flex flex-col">
-          <div className="h-[35px] flex justify-between items-center">
-            <div>EXPLORER</div>
-            <div className="flex items-center gap-x-[4px]">
-              <ShrinkOutlined />
-              <ArrowsAltOutlined />
-            </div>
-          </div>
+        <main className="h-[calc(100%-48px)] flex-1">
           <Splitter
             direction={SplitDirection.Horizontal}
-            initialSizes={[350, 600]}
-            minWidths={[350, 600]}
-
-            // gutterClassName="dark:bg-slate-500 bg-slate-200"
           >
-            <div className="h-full p-[12px] bg-[#333333] w-full overflow-auto">
-              {
-                isWorkspaceLoading ? <div className="flex flex-1 h-full items-center justify-center">
-                  <Loading3QuartersOutlined spin className="mx-[6px]"/>
-                  <p>Workspace resolving</p>
-                </div> : <>
-                  {/*
+            <div className="relative h-full pt-[26px]">
+              <div className="px-[12px] w-full absolute left-0 top-0 h-[26px] flex justify-between items-center text-[#CCCCCC] bg-[#252526] ">
+                <div>EXPLORER</div>
+                <div className="flex items-center gap-x-[12px] text-[16px]">
+                  <ShrinkOutlined />
+                  <ArrowsAltOutlined />
+                </div>
+              </div>
+              <div className="h-full px-[12px] pb-[12px] bg-[#333333] w-full overflow-auto flex flex-col relative">
+                {
+                  isWorkspaceLoading ? <div className="flex flex-1 h-full items-center justify-center">
+                    <Loading3QuartersOutlined spin className="mx-[6px]"/>
+                    <p>Workspace resolving...</p>
+                  </div> : <>
+                    {/*
                 // @ts-ignore*/}
-                  <Tree
-                    titleRender={WorkspaceNodeTitle}
-                    switcherIcon={(props) => {
-                      if (props.isLeaf) {
-                        return null
-                      }
-                      return props.expanded ? <CaretDownOutlined className="text-[#94a3ad]"/> :
-                        <CaretRightOutlined className="text-[#94a3ad]"/>
-                    }}
-                    className="h-full"
-                    onRightClick={handleShowWorkspaceContextMenu}
-                    onSelect={handleFileSelected}
-                    onCheck={handleFileChecked}
-                    icon={props => {
-                      // @ts-ignore
-                      const {type} = props;
-                      if (type === FileType.File) {
-                        return <FileImageFilled className="text-emerald-400 text-[18px]]"/>
-                      } else if (type === FileType.Directory) {
-                        if (props.expanded) {
-                          return <FolderOpenFilled className="text-[#94a3ad] text-[18px]"/>
-                        } else {
-                          return <FolderFilled className="text-[#94a3ad] text-[18px]"/>
+                    <Tree
+                      titleRender={WorkspaceNodeTitle}
+                      switcherIcon={(props) => {
+                        if (props.isLeaf) {
+                          return null
                         }
-                      }
-                    }}
-                    autoExpandParent
-                    defaultExpandAll
-                    // @ts-ignore
-                    treeData={workspace}
-                    checkable
-                  />
-                </>
-              }
+                        return props.expanded ? <CaretDownOutlined className="text-[#94a3ad]"/> :
+                          <CaretRightOutlined className="text-[#94a3ad]"/>
+                      }}
+                      className="h-full"
+                      onRightClick={handleShowWorkspaceContextMenu}
+                      onSelect={handleFileSelected}
+                      onCheck={handleFileChecked}
+                      icon={props => {
+                        // @ts-ignore
+                        const {type} = props;
+                        if (type === FileType.File) {
+                          return <FileImageFilled className="text-emerald-400 text-[18px]]"/>
+                        } else if (type === FileType.Directory) {
+                          if (props.expanded) {
+                            return <FolderOpenFilled className="text-[#94a3ad] text-[18px]"/>
+                          } else {
+                            return <FolderFilled className="text-[#94a3ad] text-[18px]"/>
+                          }
+                        }
+                      }}
+                      autoExpandParent
+                      defaultExpandAll
+                      // @ts-ignore
+                      treeData={workspace}
+                      checkable
+                    />
+                  </>
+                }
+              </div>
             </div>
             <div className="h-full flex flex-1">
               <div className="flex-1 flex justify-center items-center px-[20px]">
