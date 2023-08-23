@@ -6,11 +6,30 @@
 			"ES2020"
 		],
 		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true   /* enable all strict type-checking options */
-		/* Additional Checks */
-		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
-	}
+		"strict": false,
+		"outDir": "out",
+		"baseUrl": "./",
+		"rootDir": "./",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"paths": {
+			"@root/*": [
+				"./*"
+			],
+			"@src/*": [
+				"./src/*"
+			],
+			"@modules/*": [
+				"./src/modules/*"
+			],
+			"@image-compressor/*": [
+				"./src/modules/image-compressor/*"
+			]
+		}
+	},
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"./src/modules/image-compressor/webview"
+	]
 }

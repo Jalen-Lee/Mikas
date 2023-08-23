@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --contexify-menu-bgColor: #292a2d;
+  --contexify-separator-color: #4c4c4c;
+  --contexify-item-color: #fff;
+  --contexify-activeItem-color: #fff;
+  --contexify-activeItem-bgColor: #3265b7;
+  --contexify-rightSlot-color: #6f6e77;
+  --contexify-activeRightSlot-color: #fff;
+  --contexify-arrow-color: #6f6e77;
+  --contexify-activeArrow-color: #fff;
+  --contexify-menu-radius: 4px;
+}
+
+.contexify{
+  border: 1px solid #53585d;
+}
+
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,body,#root{
+  height: 100%;
+}
+body{
+  padding: 0!important;
+}
+
+#app{
+  height: 100vh;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.rc-tree{
+  .rc-tree-list{
+    .rc-tree-list-holder{
+      .rc-tree-treenode{
+        display: flex!important;
+        align-items: center!important;
+        &:hover{
+          background: #4b4b4b!important;
+        }
+        &.rc-tree-treenode-selected{
+          background: #4b4b4b!important;
+        }
+        .rc-tree-node-selected{
+          background:none!important;
+          border: none!important;
+          box-shadow: none!important;
+          opacity: 1!important;
+        }
+        .rc-tree-switcher{
+          background-image: none!important;
+          background-position: initial;
+          display: flex;
+          align-items: center;
+        }
+        .rc-tree-node-content-wrapper{
+          display: flex;
+          align-items: center;
+          .rc-tree-iconEle{
+            display: flex;
+            align-items: center;
+          }
+        }
+        .rc-tree-node-content-wrapper{
+          display: flex;
+          flex: 1;
+          padding-left: 4px!important;
+          .rc-tree-title{
+            display: flex;
+            flex: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+
