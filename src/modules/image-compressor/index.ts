@@ -102,6 +102,8 @@ export default class ImageCompressor {
    */
   private async webviewInit() {
     const dispose = vscode.commands.registerCommand("mikas.compress", async (entry: vscode.Uri, others: vscode.Uri[]) => {
+      logger.info("entry", entry);
+      logger.info("others", others);
       const tinypngApiKeyValid = await this.tinypngApiKeyValidate();
       if (!tinypngApiKeyValid) return;
       await this.createRootTempFolder();
@@ -111,7 +113,7 @@ export default class ImageCompressor {
       });
       this.setWebviewMessageListener(webviewPanel.webview);
       let treePromises;
-      if (others.length) {
+      if (Array.isArray(others) && others.length) {
         treePromises = others.map<Promise<WorkspaceNode>>((uri) => getAvailableImageDirectoryStructure(uri, webviewPanel.webview));
       } else {
         treePromises = [getAvailableImageDirectoryStructure(entry, webviewPanel.webview)];

@@ -26,10 +26,11 @@
     "webp"
   ],
   "engines": {
-    "vscode": "^1.81.0"
+    "vscode": "^1.51.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Snippets"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
