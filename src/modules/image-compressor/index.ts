@@ -459,9 +459,7 @@ export default class ImageCompressor {
         ...allWorkspaceUri,
       ],
     });
-    panel.iconPath = isDev
-      ? vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "assets", "icon.png")
-      : vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "dist", "assets", "icon.png");
+    panel.iconPath = vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "assets", "icon.png");
     const webviewLoader = new WebviewLoader(this.vsCodeContext, panel.webview, {
       htmlEntry: isDev ? ["src", "modules", "image-compressor", "webview", "dist", "index.html"] : ["dist", "image-compressor-dist", "index.html"],
       distDir: isDev ? ["src", "modules", "image-compressor", "webview", "dist"] : ["dist", "image-compressor-dist"],
