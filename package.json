@@ -88,13 +88,13 @@
         "mikas.tinypngApiKey": {
           "order": 1,
           "type": "string",
-          "markdownDescription": "TinyPNG API Key, [register](https://tinypng.com/)"
+          "markdownDescription": "TinyPNG API Key, [register](https://tinypng.com/developers)"
         },
         "mikas.forceOverwrite": {
           "order": 2,
           "type": "boolean",
           "default": false,
-          "description": "Only check this option if you want to force TinyPNG to overwrite your existing file instead of creating always a new file."
+          "description": "Select this option only if you want the extension to forcibly overwrite existing files instead of always creating new ones."
         },
         "mikas.compressedFilePostfix": {
           "order": 3,

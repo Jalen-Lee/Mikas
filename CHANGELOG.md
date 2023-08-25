@@ -2,8 +2,6 @@
 
 All notable changes to the "mikas-image-compressor" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [Released]
 
-## [Unreleased]
-
-- Initial release
+### v1.1.1(2023-08-26)

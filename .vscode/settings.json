@@ -14,5 +14,6 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "prettier.singleAttributePerLine": true,
-  "prettier.requireConfig": true
+  "prettier.requireConfig": true,
+  "mikas.forceOverwrite": false
 }
