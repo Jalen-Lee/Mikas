@@ -409,10 +409,10 @@ function App() {
                       <span>Optimized Size:</span>
                       <span>{formatFileSize(workspaceParsedInfo.optimizedSize)}</span>
                     </li>
-                    <li className="flex items-center justify-between">
-                      <span>Optimized Rate:</span>
-                      <span>{calcCompressionRatio(workspaceParsedInfo.totalSize, workspaceParsedInfo.optimizedSize)}%</span>
-                    </li>
+                    {/*<li className="flex items-center justify-between">*/}
+                    {/*  <span>Optimized Rate:</span>*/}
+                    {/*  <span>{calcCompressionRatio(workspaceParsedInfo.totalSize, workspaceParsedInfo.optimizedSize)}%</span>*/}
+                    {/*</li>*/}
                     <li className="flex items-center justify-between">
                       <span>PNG:</span>
                       <span>{workspaceParsedInfo.png}</span>
