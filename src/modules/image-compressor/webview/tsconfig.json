@@ -20,7 +20,19 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "typeRoots": ["node_modules/@types", "../typing"]
+    "typeRoots": ["node_modules/@types", "../typing"],
+    "paths": {
+      "@extension/*": [
+        "../*"
+      ],
+      "@/*": ["./*"],
+      "@src/*": ["./src/*"],
+      "@typing": ["../typing"],
+      "@utils": ["./src/utils"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@assets/*": ["./src/assets/*"]
+    }
   },
   "include": ["src", "../typing"],
   "references": [{ "path": "./tsconfig.node.json" }]

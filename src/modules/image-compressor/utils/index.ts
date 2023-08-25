@@ -80,7 +80,7 @@ export async function getDirectoryStructure<T>(
     return filter(uri.fsPath)
       ? await mapped({
           key: uri.fsPath,
-          title: info.base,
+          title: uri.fsPath,
           isLeaf: true,
           name: info.base,
           fsPath: uri.fsPath,
@@ -93,7 +93,7 @@ export async function getDirectoryStructure<T>(
   } else if (await isDirectory(uri)) {
     const directoryStructure: DirectoryStructureNode = {
       key: uri.fsPath,
-      title: info.base,
+      title: uri.fsPath,
       isLeaf: false,
       name: info.base,
       fsPath: uri.fsPath,
@@ -116,7 +116,7 @@ export async function getDirectoryStructure<T>(
           directoryStructure.children.push(
             await mapped({
               key: entryUri.fsPath,
-              title: name,
+              title: entryUri.fsPath,
               isLeaf: true,
               name: name,
               fsPath: entryUri.fsPath,
@@ -142,6 +142,7 @@ export async function getDirectoryStructure<T>(
  * @returns
  */
 export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webview: vscode.Webview, parentUri?: vscode.Uri): Promise<WorkspaceNode> {
+  // @ts-ignore
   return getDirectoryStructure<ImageDirectoryStructureNode>(uri, parentUri, isAvailableImage, async (node: DirectoryStructureNode) => {
     const dimensions = await sizeOf(node.fsPath);
     return {

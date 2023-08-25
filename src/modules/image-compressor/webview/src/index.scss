@@ -84,10 +84,15 @@ body{
   }
 }
 
-
-.tippy-tooltip{
-  background-color: #262626!important;
-  .arrow-regular{
-    border-bottom-color: #262626!important;
+.tippy-popper{
+  pointer-events: auto!important;
+  .tippy-tooltip{
+    background-color: #262626!important;
+    .arrow-regular{
+      border-bottom-color: #262626!important;
+    }
+    div[x-circle]{
+      background-color: #262626!important;
+    }
   }
 }

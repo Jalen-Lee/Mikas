@@ -60,6 +60,7 @@ export interface ImageDirectoryStructureNode {
     width: number;
     height: number;
   };
+  children?: Array<ImageDirectoryStructureNode>;
 }
 
 export type WorkspaceNode = DirectoryStructureNode & ImageDirectoryStructureNode;

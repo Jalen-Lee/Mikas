@@ -1,5 +1,6 @@
 import type { WebviewApi } from "vscode-webview";
-import {IPCMessage} from "../../../typing";
+import { FileType, IPCMessage, WorkspaceNode } from "@typing";
+import logger from "@extension/utils/logger.ts";
 
 class VSCodeAPIWrapper {
   private readonly vsCodeApi: WebviewApi<unknown> | undefined;
@@ -14,7 +15,7 @@ class VSCodeAPIWrapper {
     if (this.vsCodeApi) {
       this.vsCodeApi.postMessage(message);
     } else {
-      console.log(message);
+      logger.info("webview.postMessage", message);
     }
   }
 
@@ -39,24 +40,81 @@ class VSCodeAPIWrapper {
 
 export const vscode = new VSCodeAPIWrapper();
 
-
-export function travelTreeToMap(root: any){
-  // BFS
-  function travel(node:any){
-    if(!node) return
-    const queue = [node]
-    while(queue.length){
-      const n = queue.shift()
-      if(Array.isArray(n.children)){
-        queue.push(...n.children)
-      }
-      if(!map.has(n.key)) map.set(n.key,n);
-    }
-  }
-  const map = new Map<string,any>()
-  travel(root);
-  return map;
+export interface WorkspaceParsedInfo {
+  total: number;
+  totalSize: number;
+  optimizedSize: number;
+  png: number;
+  jpg: number;
+  webp: number;
+  svg: number;
 }
 
+export function workspaceParse(root: WorkspaceNode) {
+  const nodeMap = new Map<string, WorkspaceNode>();
+  const workspaceParsedInfo: WorkspaceParsedInfo = {
+    total: 0,
+    totalSize: 0,
+    optimizedSize: 0,
+    png: 0,
+    jpg: 0,
+    webp: 0,
+    svg: 0,
+  };
+  function travel(node: WorkspaceNode) {
+    if (!node) return;
+    const queue = [node];
+    while (queue.length) {
+      const n = queue.shift();
+      if (n.type === FileType.File) {
+        workspaceParsedInfo.total++;
+        workspaceParsedInfo.totalSize += n.size;
+        workspaceParsedInfo.optimizedSize += n.optimizedSize;
+        switch (n.parsedInfo.ext) {
+          case ".png":
+            workspaceParsedInfo.png++;
+            break;
+          case ".jpg":
+          case ".jpeg":
+            workspaceParsedInfo.jpg++;
+            break;
+          case ".webp":
+            workspaceParsedInfo.webp++;
+            break;
+          case ".svg":
+            workspaceParsedInfo.svg++;
+            break;
+        }
+      }
+      if (Array.isArray(n.children)) {
+        queue.push(...n.children);
+      }
+      if (!nodeMap.has(n.key)) nodeMap.set(n.key, n);
+    }
+  }
+  travel(root);
+  return {
+    nodeMap,
+    workspaceParsedInfo,
+  };
+}
 
+export function calcCompressionRatio(originSize: number, optimizeSize: number) {
+  if (!originSize || !optimizeSize) return "0";
+  return (((originSize - optimizeSize) / originSize) * 100).toFixed(0);
+}
 
+export function formatFileSize(fileSize: number): string {
+  if (fileSize < 1024) {
+    return fileSize.toFixed(2) + " B";
+  } else if (fileSize < 1024 * 1024) {
+    const fileSizeInKB = fileSize / 1024;
+    return fileSizeInKB.toFixed(2) + " KB";
+  } else if (fileSize < 1024 * 1024 * 1024) {
+    const fileSizeInMB = fileSize / (1024 * 1024);
+    return fileSizeInMB.toFixed(2) + " MB";
+  } else {
+    const fileSizeInGB = fileSize / (1024 * 1024 * 1024);
+    return fileSizeInGB.toFixed(2) + " GB";
+  }
+}
