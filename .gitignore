@@ -3,5 +3,5 @@ dist
 node_modules
 .vscode-test/
 # *.vsix
-.idea
-.DS_Store
+# .idea
+# .DS_Store

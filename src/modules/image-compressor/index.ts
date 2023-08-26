@@ -35,7 +35,7 @@ export default class ImageCompressor {
   }
 
   /**
-   * @description tinypngApiKey校验
+   * @description tinypng API Key validate
    * @returns
    */
   private tinypngApiKeyValidate() {
@@ -82,12 +82,10 @@ export default class ImageCompressor {
   private async createRootTempFolder() {
     const workspaceFolder = vscode.workspace.workspaceFolders[0];
     if (!workspaceFolder) {
-      // 没有打开的工作空间文件夹
       vscode.window.showErrorMessage("No open workspace folder");
       return;
     }
     const tempFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, ".mikas");
-    // const tempFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, ".mikas");
     try {
       await vscode.workspace.fs.createDirectory(tempFolderUri);
       this.tempFolder = tempFolderUri;
@@ -97,9 +95,6 @@ export default class ImageCompressor {
     }
   }
 
-  /**
-   *
-   */
   private async webviewInit() {
     const dispose = vscode.commands.registerCommand("mikas.compress", async (entry: vscode.Uri, others: vscode.Uri[]) => {
       logger.info("entry", entry);
@@ -149,11 +144,6 @@ export default class ImageCompressor {
     }
   }
 
-  /**
-   * @description 创建压缩任务队列
-   * @param files
-   * @returns
-   */
   private createCompressTaskQueue(files: { key: string; fsPath: string; ext: string }[], tempUri: vscode.Uri) {
     return files.map<() => Promise<any> | any>((file) => {
       if (isAvailableTinypngExt(file.ext)) {
@@ -167,20 +157,21 @@ export default class ImageCompressor {
   }
 
   /**
-   * @description 处理压缩任务队列，默认限制最大6个并发任务
-   * @param queue
-   * @param cb
-   * @param concurrency 最大并发数
+   * @description Process the compressed task queue with a maximum of 6 concurrent tasks by default
+   * @param tasks
+   * @param fulfilledCb
+   * @param rejectedCb
+   * @param concurrency Maximum concurrency
    */
   private consumeCompressTaskQueue<T>(tasks: (() => Promise<T>)[], fulfilledCb: (res: any) => void, rejectedCb: (res: any) => void, concurrency = 2) {
     let i = 0;
-    const ret = []; // 存储所有的异步任务
-    const executing = []; // 存储正在执行的异步任务
+    const ret = []; // Stores all asynchronous tasks
+    const executing = []; // Stores asynchronous tasks that are being executed
     const enqueue = function () {
       if (i === tasks.length) {
         return Promise.resolve();
       }
-      const task = tasks[i++]; // 获取新的任务项
+      const task = tasks[i++];
       const p = Promise.resolve()
         .then(() => task())
         .then((res) => {
@@ -193,10 +184,10 @@ export default class ImageCompressor {
       ret.push(p);
 
       let r = Promise.resolve();
-      // 当并发值小于或等于总任务个数时，进行并发控制
+      // When the concurrency value is less than or equal to the total number of tasks, concurrency control is implemented
       if (concurrency <= tasks.length) {
-        // 当任务完成后，从正在执行的任务数组中移除已完成的任务
-        const e = p.then((res) => {
+        // When the task is complete, the completed task is removed from the array of tasks being executed
+        const e = p.then(() => {
           return executing.splice(executing.indexOf(e), 1);
         });
         executing.push(e);
@@ -205,15 +196,16 @@ export default class ImageCompressor {
         }
       }
 
-      // 正在执行任务列表 中较快的任务执行完成之后，才会从array数组中获取新的待办任务
+      // The system obtains a new task from the array only after the faster task in the executing task list is completed
       return r.then(() => enqueue());
     };
     return enqueue().then(() => Promise.all(ret));
   }
 
   /**
-   * @description tinypng压缩
-   * @param fsPath 文件路径
+   * @description tinypng
+   * @param fsPath
+   * @param tempUri
    * @returns
    */
   private tinifyCompress(fsPath: string, tempUri: vscode.Uri) {
@@ -271,7 +263,7 @@ export default class ImageCompressor {
   }
 
   /**
-   * @description svgo压缩
+   * @description svgo
    * @param fsPath
    */
   private async svgoCompress(fsPath: string, tempUri: vscode.Uri) {
@@ -304,18 +296,13 @@ export default class ImageCompressor {
     });
   }
 
-  /**
-   * @description 多文件压缩
-   * @param payload
-   * @param senderWebview
-   */
-  private async handleCompressFiles(
+  private async handleCompressFilesCommand(
     payload: {
       files: Array<{ key: string; fsPath: string; ext: string }>;
     },
     senderWebview: vscode.Webview
   ) {
-    logger.info("handleCompressFiles", payload);
+    logger.info("handleCompressFilesCommand", payload);
     const { files = [] } = payload;
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
     try {
@@ -392,7 +379,7 @@ export default class ImageCompressor {
       const taskPromises = files.map((file) => {
         return new Promise((resolve, reject) => {
           const tempUri = vscode.Uri.parse(file.tempFsPath);
-          let sourceUri;
+          let sourceUri: vscode.Uri;
           if (forceOverwrite) {
             sourceUri = vscode.Uri.parse(file.sourceFsPath);
           } else {
@@ -443,10 +430,6 @@ export default class ImageCompressor {
     }
   }
 
-  /**
-   * @description 创建webview实例
-   * @returns
-   */
   private async createWebviewPanel() {
     const allWorkspaceUri = vscode.workspace.workspaceFolders.map((i) => i.uri);
     const panel = vscode.window.createWebviewPanel("mikas", "Mikas - Image Compressor", vscode.ViewColumn.One, {
@@ -483,10 +466,6 @@ export default class ImageCompressor {
     vscode.env.openExternal(fileUri);
   }
 
-  /**
-   * @description 设置webview事件监听
-   * @param webview
-   */
   private setWebviewMessageListener(webview: vscode.Webview) {
     webview.onDidReceiveMessage(
       (message: IPCMessage) => {
@@ -494,7 +473,7 @@ export default class ImageCompressor {
         logger.info("Webview message", message);
         switch (signal) {
           case WebviewIPCSignal.Compress:
-            this.handleCompressFiles(payload, webview);
+            this.handleCompressFilesCommand(payload, webview);
             break;
           case WebviewIPCSignal.Save:
             this.handleSaveCommand(payload, webview);
@@ -516,11 +495,6 @@ export default class ImageCompressor {
     return this.disposers;
   }
 
-  /**
-   * @description 单例
-   * @param context
-   * @returns
-   */
   public static getInstance(context: vscode.ExtensionContext) {
     if (!this.instance) {
       this.instance = new ImageCompressor(context);

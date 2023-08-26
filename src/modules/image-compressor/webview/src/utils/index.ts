@@ -43,7 +43,7 @@ export const vscode = new VSCodeAPIWrapper();
 export interface WorkspaceParsedInfo {
   total: number;
   totalSize: number;
-  optimizedSize: number;
+  reducedSize: number;
   png: number;
   jpg: number;
   webp: number;
@@ -55,7 +55,7 @@ export function workspaceParse(root: WorkspaceNode) {
   const workspaceParsedInfo: WorkspaceParsedInfo = {
     total: 0,
     totalSize: 0,
-    optimizedSize: 0,
+    reducedSize: 0,
     png: 0,
     jpg: 0,
     webp: 0,
@@ -69,7 +69,9 @@ export function workspaceParse(root: WorkspaceNode) {
       if (n.type === FileType.File) {
         workspaceParsedInfo.total++;
         workspaceParsedInfo.totalSize += n.size;
-        workspaceParsedInfo.optimizedSize += n.optimizedSize;
+        if (n.optimizedSize !== 0) {
+          workspaceParsedInfo.reducedSize += n.size - n.optimizedSize;
+        }
         switch (n.parsedInfo.ext) {
           case ".png":
             workspaceParsedInfo.png++;
@@ -99,9 +101,13 @@ export function workspaceParse(root: WorkspaceNode) {
   };
 }
 
-export function calcCompressionRatio(originSize: number, optimizeSize: number) {
+export function calcReducedRate(originSize: number, optimizeSize: number) {
   if (!originSize || !optimizeSize) return "0";
   return (((originSize - optimizeSize) / originSize) * 100).toFixed(0);
+}
+
+export function formatReducedRate(value: number) {
+  return value.toFixed(2);
 }
 
 export function formatFileSize(fileSize: number): string {

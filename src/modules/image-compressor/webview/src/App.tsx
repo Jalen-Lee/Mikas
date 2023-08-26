@@ -2,7 +2,7 @@ import { HTMLAttributes, useLayoutEffect, useMemo, useState } from "react";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import "rc-tree/assets/index.css";
 import Tree, { BasicDataNode, TreeProps } from "rc-tree";
-import { calcCompressionRatio, formatFileSize, vscode, workspaceParse, WorkspaceParsedInfo } from "@utils";
+import { formatFileSize, vscode, workspaceParse, WorkspaceParsedInfo } from "@utils";
 import {
   CaretDownOutlined,
   CaretRightOutlined,
@@ -45,7 +45,7 @@ function App() {
   const [workspaceParsedInfo, setWorkspaceParsedInfo] = useState<WorkspaceParsedInfo>({
     total: 0,
     totalSize: 0,
-    optimizedSize: 0,
+    reducedSize: 0,
     png: 0,
     jpg: 0,
     webp: 0,
@@ -406,13 +406,13 @@ function App() {
                       <span>{formatFileSize(workspaceParsedInfo.totalSize)}</span>
                     </li>
                     <li className="flex items-center justify-between">
-                      <span>Optimized Size:</span>
-                      <span>{formatFileSize(workspaceParsedInfo.optimizedSize)}</span>
+                      <span>Reduced Size:</span>
+                      <span>{formatFileSize(workspaceParsedInfo.reducedSize)}</span>
                     </li>
-                    {/*<li className="flex items-center justify-between">*/}
-                    {/*  <span>Optimized Rate:</span>*/}
-                    {/*  <span>{calcCompressionRatio(workspaceParsedInfo.totalSize, workspaceParsedInfo.optimizedSize)}%</span>*/}
-                    {/*</li>*/}
+                    <li className="flex items-center justify-between">
+                      <span>Reduced Rate:</span>
+                      <span>{((workspaceParsedInfo.reducedSize / workspaceParsedInfo.totalSize) * 100).toFixed(2)}%</span>
+                    </li>
                     <li className="flex items-center justify-between">
                       <span>PNG:</span>
                       <span>{workspaceParsedInfo.png}</span>

@@ -3,9 +3,9 @@
   "displayName": "Mikas - Image Compressor",
   "description": "Helps you to compress commonly used image formats faster and better.Support PNG,JPG/JPEG,WebP,SVG.",
   "homepage": "https://github.com/Jalen-Lee/Mikas/blob/main/README.md",
-  "version": "1.1.1",
-  "author": "JaylenL",
-  "publisher": "JaylenL",
+  "version": "1.1.2",
+  "author": "JaylenLee",
+  "publisher": "JaylenLee",
   "icon": "assets/icon.png",
   "issues": "https://github.com/Jalen-Lee/Mikas/issues",
   "bugs": {

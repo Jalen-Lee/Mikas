@@ -2,7 +2,7 @@ import { FallOutlined, SyncOutlined, WarningFilled, CheckCircleFilled } from "@a
 import { CompressedState, WorkspaceNode } from "@typing";
 import { Tooltip } from "react-tippy";
 import "react-tippy/dist/tippy.css";
-import { calcCompressionRatio } from "@utils";
+import { calcReducedRate } from "@utils";
 
 export default function WorkspaceNodeTitle(props: WorkspaceNode) {
   const { name, compressedState = CompressedState.IDLE, optimizedSize, size, errorMessage } = props;
@@ -20,7 +20,7 @@ export default function WorkspaceNodeTitle(props: WorkspaceNode) {
         {compressedState === CompressedState.FULFILLED && (
           <>
             <FallOutlined className="text-emerald-500 mr-[6px]" />
-            {<span>{calcCompressionRatio(size, optimizedSize)}%</span>}
+            {<span>{calcReducedRate(size, optimizedSize)}%</span>}
           </>
         )}
         {compressedState === CompressedState.REJECTED && (
