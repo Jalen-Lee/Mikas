@@ -6,10 +6,21 @@ import * as svgo from "svgo";
 import * as imageSize from "image-size";
 import { nanoid } from "nanoid";
 import WebviewLoader from "./webview-loader";
-import { getAvailableImageDirectoryStructure, isAvailableSvgoExt, isAvailableTinypngExt, isDev, sleep } from "./utils";
-import { WebviewIPCSignal, type IPCMessage, ExtensionIPCSignal, WorkspaceNode, ExecutedStatus } from "./typing";
+import { getDirectoryStructure, isAvailableImage, isAvailableSvgoExt, isAvailableTinypngExt, isDev, sleep } from "./utils";
+import {
+  WebviewIPCSignal,
+  type IPCMessage,
+  ExtensionIPCSignal,
+  WorkspaceNode,
+  ExecutedStatus,
+  ImageDirectoryStructureNode,
+  DirectoryStructureNode,
+  CompressedState,
+  FileType,
+} from "./typing";
 import logger from "./utils/logger";
 import type { ISizeCalculationResult } from "image-size/dist/types/interface";
+import { Uri } from "vscode";
 
 const tinify = Tinify.default;
 const sizeOf = util.promisify(imageSize.default);
@@ -19,6 +30,8 @@ logger.info("env", process.env.NODE_ENV);
 export default class ImageCompressor {
   private tempFolder: vscode.Uri;
   private vsCodeContext: vscode.ExtensionContext;
+  private ignorePatterns: string[];
+  private tinypngApiKeyValid = false;
   private webviewTempFolderMap = new WeakMap<vscode.Webview, vscode.Uri>();
   private webviewIdTempFolderMap = new Map<string, vscode.Uri>();
   private readonly disposers: vscode.Disposable[] = [];
@@ -32,6 +45,17 @@ export default class ImageCompressor {
     ImageCompressor.instance = this;
     this.vsCodeContext = context;
     this.webviewInit();
+  }
+
+  private configInit() {
+    try {
+      const ignore = vscode.workspace.getConfiguration("mikas").get<string>("ignore") || "";
+      this.ignorePatterns = ignore.replace(/\s/g, "").split(";").filter(Boolean);
+      logger.info("ignorePatterns", this.ignorePatterns);
+      this.tinypngApiKeyValidate();
+    } catch (e) {
+      logger.error("configInit", e);
+    }
   }
 
   /**
@@ -54,6 +78,7 @@ export default class ImageCompressor {
               tinify.key = tinypngApiKey;
               try {
                 await tinify.validate();
+                this.tinypngApiKeyValid = true;
                 resolve(true);
               } catch (e) {
                 reject(false);
@@ -63,11 +88,16 @@ export default class ImageCompressor {
             } else {
               reject(false);
               await sleep(500);
-              vscode.window.showErrorMessage('TinyPNG: API validation failed. Be sure that you filled out "tinypngApiKey" setting already.', "Open Settings").then((options) => {
-                if (options === "Open Settings") {
-                  vscode.commands.executeCommand("workbench.action.openSettings", "tinypngApiKey");
-                }
-              });
+              vscode.window
+                .showErrorMessage(
+                  'TinyPNG: API validation failed. Be sure that you filled out "tinypngApiKey" setting already. Turn the compressor back on after setting.',
+                  "Open Settings"
+                )
+                .then((options) => {
+                  if (options === "Open Settings") {
+                    vscode.commands.executeCommand("workbench.action.openSettings", "tinypngApiKey");
+                  }
+                });
             }
           } catch (e) {
             reject(false);
@@ -95,12 +125,40 @@ export default class ImageCompressor {
     }
   }
 
+  private async getAvailableImageDirectoryStructure(uri: vscode.Uri, webview: vscode.Webview, parentUri?: vscode.Uri): Promise<WorkspaceNode> {
+    return getDirectoryStructure<ImageDirectoryStructureNode>(
+      uri,
+      parentUri,
+      isAvailableImage,
+      //@ts-ignore
+      async (node: DirectoryStructureNode) => {
+        const dimensions = await sizeOf(node.fsPath);
+        return {
+          compressedState: CompressedState.IDLE,
+          sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),
+          optimizedFsPath: "",
+          optimizedWebviewUri: "",
+          optimizedSize: 0,
+          errorMessage: "",
+          disabled: false,
+          disableCheckbox: node.type === FileType.Directory && node?.children.length === 0,
+          dimensions,
+          optimizedDimensions: {
+            width: 0,
+            height: 0,
+          },
+          ...node,
+        };
+      },
+      this.ignorePatterns
+    );
+  }
+
   private async webviewInit() {
     const dispose = vscode.commands.registerCommand("mikas.compress", async (entry: vscode.Uri, others: vscode.Uri[]) => {
       logger.info("entry", entry);
       logger.info("others", others);
-      const tinypngApiKeyValid = await this.tinypngApiKeyValidate();
-      if (!tinypngApiKeyValid) return;
+      this.configInit();
       await this.createRootTempFolder();
       const { webviewPanel, webviewId } = await this.createWebviewPanel();
       webviewPanel.onDidDispose(() => {
@@ -109,9 +167,9 @@ export default class ImageCompressor {
       this.setWebviewMessageListener(webviewPanel.webview);
       let treePromises;
       if (Array.isArray(others) && others.length) {
-        treePromises = others.map<Promise<WorkspaceNode>>((uri) => getAvailableImageDirectoryStructure(uri, webviewPanel.webview));
+        treePromises = others.map<Promise<WorkspaceNode>>((uri) => this.getAvailableImageDirectoryStructure(uri, webviewPanel.webview));
       } else {
-        treePromises = [getAvailableImageDirectoryStructure(entry, webviewPanel.webview)];
+        treePromises = [this.getAvailableImageDirectoryStructure(entry, webviewPanel.webview)];
       }
       const treeData = (await Promise.all<WorkspaceNode>(treePromises)).filter(Boolean);
       logger.info("treeData", treeData);
@@ -212,11 +270,20 @@ export default class ImageCompressor {
     return new Promise<{
       key: string;
       sourceFsPath: string;
+      errorMessage: string;
       destinationFsPath: string;
       optimizedSize: number;
       optimizedDimensions: ISizeCalculationResult;
     }>((resolve, reject) => {
       try {
+        if (!this.tinypngApiKeyValid) {
+          reject({
+            key: fsPath,
+            sourceFsPath: fsPath,
+            errorMessage: 'TinyPNG API validation failed. Be sure that you filled out "tinypngApiKey" setting already. Turn the compressor back on after setting.',
+          });
+          return;
+        }
         const postfix = vscode.workspace.getConfiguration("mikas").get<string>("compressedFilePostfix") || "";
         const parsedPath = path.parse(fsPath);
         const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
@@ -245,6 +312,7 @@ export default class ImageCompressor {
             resolve({
               key: fsPath,
               sourceFsPath: fsPath,
+              errorMessage,
               destinationFsPath,
               optimizedSize: stat.size,
               optimizedDimensions: dimensions,

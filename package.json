@@ -107,6 +107,16 @@
           "type": "number",
           "default": 6,
           "description": "The maximum number of concurrent execution tasks is set to 6 by default. A large setting may increase Vscode's memory footprint."
+        },
+        "mikas.ignore": {
+          "order": 5,
+          "type": "string",
+          "default": "**/node_modules/**;\n**/.mikas/**;\n**/.git/**;",
+          "items": {
+            "type": "string"
+          },
+          "editPresentation": "multilineText",
+          "markdownDescription": "Specifies intentionally files that compressor should ignore. [Glob](https://en.wikipedia.org/wiki/Glob_(programming)) expressions are supported and must end in semicolons."
         }
       }
     },
@@ -160,6 +170,7 @@
   "dependencies": {
     "cheerio": "1.0.0-rc.12",
     "image-size": "^1.0.2",
+    "minimatch": "^9.0.3",
     "nanoid": "^4.0.2",
     "svgo": "^3.0.2",
     "tinify": "^1.7.1"

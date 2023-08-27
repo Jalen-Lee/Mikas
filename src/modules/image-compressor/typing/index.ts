@@ -4,7 +4,7 @@ export interface IPCMessage {
   signal: string;
   payload: any;
 }
-// 文件类型
+
 export enum FileType {
   Unknown = 0,
   File = 1,
@@ -12,7 +12,6 @@ export enum FileType {
   SymbolicLink = 3,
 }
 
-// 压缩进程状态
 export enum CompressedState {
   IDLE = "idle",
   PENDING = "pending",
@@ -23,23 +22,14 @@ export enum CompressedState {
 
 export interface DirectoryStructureNode {
   key: string;
-  // 标题
   title: string;
-  // 是否是叶子结点
   isLeaf: boolean;
-  // 文件名
   name: string;
-  // 系统路径
   fsPath: string;
-  // 类型
   type: FileType.File | FileType.Directory;
-  // 大小
   size?: number;
-  // path.parse解析数据
   parsedInfo: ParsedPath;
-  // 父目录
   parentPath: string;
-  // 子节点
   children?: Array<DirectoryStructureNode>;
 }
 

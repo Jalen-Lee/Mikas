@@ -106,8 +106,9 @@ export function calcReducedRate(originSize: number, optimizeSize: number) {
   return (((originSize - optimizeSize) / originSize) * 100).toFixed(0);
 }
 
-export function formatReducedRate(value: number) {
-  return value.toFixed(2);
+export function formatReducedRate(reducedSize: number,totalSize:number) {
+  if(!totalSize || !reducedSize) return "0"
+  return ((reducedSize / totalSize) * 100).toFixed(2)
 }
 
 export function formatFileSize(fileSize: number): string {

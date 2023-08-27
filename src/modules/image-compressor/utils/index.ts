@@ -4,6 +4,8 @@ import * as path from "path";
 import { FileType, type DirectoryStructureNode, ImageDirectoryStructureNode, CompressedState, WorkspaceNode } from "@image-compressor/typing";
 import * as util from "util";
 import * as imageSize from "image-size";
+import * as minimatch from "minimatch";
+import logger from "./logger";
 const sizeOf = util.promisify(imageSize.default);
 
 export const isDev = process.env.NODE_ENV === "development";
@@ -58,6 +60,14 @@ export function sleep(time) {
   });
 }
 
+export function globIgnoreFilter(ignore: string[], path: string) {
+  for (const ignorePattern of ignore) {
+    const matcher = minimatch.makeRe(ignorePattern);
+    if (matcher && matcher.test(path)) return true;
+  }
+  return false;
+}
+
 /**
  * @description 获取目录结构树
  * @param uri 入口
@@ -69,10 +79,13 @@ export async function getDirectoryStructure<T>(
   uri: vscode.Uri,
   parentUri: vscode.Uri = vscode.Uri.parse("/"),
   filter?: (fsPath: string) => Boolean,
-  mapped?: (node: DirectoryStructureNode) => Promise<DirectoryStructureNode & T>
+  mapped?: (node: DirectoryStructureNode) => Promise<DirectoryStructureNode & T>,
+  ignores?: string[]
 ): Promise<DirectoryStructureNode & T> {
   filter = filter || (() => true);
   mapped = mapped || ((node) => Promise.resolve(node) as Promise<DirectoryStructureNode & T>);
+  ignores = ignores || [];
+  if (globIgnoreFilter(ignores, uri.fsPath)) return;
   const info = path.parse(uri.fsPath);
 
   if (await isFile(uri)) {
@@ -106,26 +119,28 @@ export async function getDirectoryStructure<T>(
     const entries = await vscode.workspace.fs.readDirectory(uri);
     for (const [name, type] of entries) {
       const entryUri = vscode.Uri.joinPath(uri, name);
-      const info = path.parse(entryUri.fsPath);
-      if (type === vscode.FileType.Directory) {
-        const childStructure = await getDirectoryStructure(entryUri, uri, filter, mapped);
-        childStructure && directoryStructure.children.push(childStructure);
-      } else {
-        const stat = await vscode.workspace.fs.stat(entryUri);
-        if (filter(entryUri.fsPath)) {
-          directoryStructure.children.push(
-            await mapped({
-              key: entryUri.fsPath,
-              title: entryUri.fsPath,
-              isLeaf: true,
-              name: name,
-              fsPath: entryUri.fsPath,
-              size: stat.size,
-              type: FileType.File,
-              parsedInfo: info,
-              parentPath: uri.fsPath,
-            })
-          );
+      if (!globIgnoreFilter(ignores, entryUri.fsPath)) {
+        const info = path.parse(entryUri.fsPath);
+        if (type === vscode.FileType.Directory) {
+          const childStructure = await getDirectoryStructure(entryUri, uri, filter, mapped, ignores);
+          childStructure && directoryStructure.children.push(childStructure);
+        } else {
+          const stat = await vscode.workspace.fs.stat(entryUri);
+          if (filter(entryUri.fsPath)) {
+            directoryStructure.children.push(
+              await mapped({
+                key: entryUri.fsPath,
+                title: entryUri.fsPath,
+                isLeaf: true,
+                name: name,
+                fsPath: entryUri.fsPath,
+                size: stat.size,
+                type: FileType.File,
+                parsedInfo: info,
+                parentPath: uri.fsPath,
+              })
+            );
+          }
         }
       }
     }
@@ -141,25 +156,32 @@ export async function getDirectoryStructure<T>(
  * @param parentUri 父目录
  * @returns
  */
-export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webview: vscode.Webview, parentUri?: vscode.Uri): Promise<WorkspaceNode> {
+export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webview: vscode.Webview, parentUri?: vscode.Uri, ignores?: string[]): Promise<WorkspaceNode> {
   // @ts-ignore
-  return getDirectoryStructure<ImageDirectoryStructureNode>(uri, parentUri, isAvailableImage, async (node: DirectoryStructureNode) => {
-    const dimensions = await sizeOf(node.fsPath);
-    return {
-      compressedState: CompressedState.IDLE,
-      sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),
-      optimizedFsPath: "",
-      optimizedWebviewUri: "",
-      optimizedSize: 0,
-      errorMessage: "",
-      disabled: false,
-      disableCheckbox: node.type === FileType.Directory && node?.children.length === 0,
-      dimensions,
-      optimizedDimensions: {
-        width: 0,
-        height: 0,
-      },
-      ...node,
-    };
-  });
+  return getDirectoryStructure<ImageDirectoryStructureNode>(
+    uri,
+    parentUri,
+    isAvailableImage,
+    //@ts-ignore
+    async (node: DirectoryStructureNode) => {
+      const dimensions = await sizeOf(node.fsPath);
+      return {
+        compressedState: CompressedState.IDLE,
+        sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),
+        optimizedFsPath: "",
+        optimizedWebviewUri: "",
+        optimizedSize: 0,
+        errorMessage: "",
+        disabled: false,
+        disableCheckbox: node.type === FileType.Directory && node?.children.length === 0,
+        dimensions,
+        optimizedDimensions: {
+          width: 0,
+          height: 0,
+        },
+        ...node,
+      };
+    },
+    ignores
+  );
 }

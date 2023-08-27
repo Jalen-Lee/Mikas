@@ -2,7 +2,7 @@ import { HTMLAttributes, useLayoutEffect, useMemo, useState } from "react";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import "rc-tree/assets/index.css";
 import Tree, { BasicDataNode, TreeProps } from "rc-tree";
-import { formatFileSize, vscode, workspaceParse, WorkspaceParsedInfo } from "@utils";
+import { formatFileSize, formatReducedRate, vscode, workspaceParse, WorkspaceParsedInfo } from "@utils";
 import {
   CaretDownOutlined,
   CaretRightOutlined,
@@ -325,7 +325,7 @@ function App() {
     <>
       <section id="app" className="flex flex-col">
         <main className="h-[calc(100%-48px)] flex-1 flex">
-          <div className="relative h-full w-[350px]">
+          <div className="relative h-full w-[450px]">
             <div className="h-full px-[12px] pb-[12px] bg-[#333333] w-full overflow-auto flex flex-col relative">
               {isWorkspaceLoading ? (
                 <div className="flex flex-1 h-full items-center justify-center">
@@ -411,7 +411,7 @@ function App() {
                     </li>
                     <li className="flex items-center justify-between">
                       <span>Reduced Rate:</span>
-                      <span>{((workspaceParsedInfo.reducedSize / workspaceParsedInfo.totalSize) * 100).toFixed(2)}%</span>
+                      <span>{formatReducedRate(workspaceParsedInfo.reducedSize,workspaceParsedInfo.totalSize)}%</span>
                     </li>
                     <li className="flex items-center justify-between">
                       <span>PNG:</span>
