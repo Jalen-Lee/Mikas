@@ -48,7 +48,9 @@ Notes: Please make sure that the network connection is normal before use, becaus
 
 ## Configuration
 
-![Configuration](doc/intro-7.png)
+![Compress the entire workspace](doc/intro-8.png)
+
+On the extension settings page, compressor supports the following configurations：
 
 ### Tinypng Api Key(required)
 
@@ -65,6 +67,18 @@ Postfix which is appended to the compressed file unless you are forcing the exte
 ### Concurrency
 
 The maximum number of concurrent execution tasks is set to 6 by default. A large setting may increase Vscode's memory footprint.
+
+### Ignore
+
+Specifies intentionally files that compressor should ignore. [Glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) expressions are supported and must end in semicolons.
+
+Default Values：
+
+```
+**/node_modules/**;
+**/.mikas/**;
+**/.git/**;
+```
 
 ## Issues Report
 
