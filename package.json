@@ -3,7 +3,7 @@
   "displayName": "Mikas - Image Compressor",
   "description": "Helps you to compress commonly used image formats faster and better.Support PNG,JPG/JPEG,WebP,SVG.",
   "homepage": "https://github.com/Jalen-Lee/Mikas/blob/main/README.md",
-  "version": "1.1.2",
+  "version": "1.2.1",
   "author": "JaylenLee",
   "publisher": "JaylenLee",
   "icon": "assets/icon.png",
@@ -135,17 +135,18 @@
   },
   "scripts": {
     "postinstall": "patch-package",
-    "vscode:prepublish": "pnpm run package",
+    "vscode:prepublish": "npm run build",
     "compile": "webpack",
     "watch": "NODE_ENV=development webpack --watch",
-    "package: extension": "webpack --mode production --devtool hidden-source-map",
-    "package": "chmod 755 ./bin/package.sh && ./bin/package.sh",
+    "build: extension": "webpack --mode production --devtool hidden-source-map",
+    "build": "chmod 755 ./bin/package.sh && ./bin/package.sh",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "build": "vsce package"
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
