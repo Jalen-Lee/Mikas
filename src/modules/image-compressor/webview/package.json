@@ -1,7 +1,7 @@
 {
-  "name": "webview",
+  "name": "mikas-webview",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.2.1",
   "type": "module",
   "scripts": {
     "dev": "npx nodemon --exec \"npm run build\" --ext \"ts tsx js json css scss\" --watch \"./src\"",

@@ -5,7 +5,7 @@ import { FileType, type DirectoryStructureNode, ImageDirectoryStructureNode, Com
 import * as util from "util";
 import * as imageSize from "image-size";
 import * as minimatch from "minimatch";
-import logger from "./logger";
+
 const sizeOf = util.promisify(imageSize.default);
 
 export const isDev = process.env.NODE_ENV === "development";
