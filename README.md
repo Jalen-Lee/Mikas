@@ -88,4 +88,8 @@ Default Values：
 
 Release notes can be found in the [changelog](https://github.com/Jalen-Lee/Mikas/blob/main/CHANGELOG.md).
 
+## Plan
+
+- SVGA、GIF support.
+
 **Enjoy!**
