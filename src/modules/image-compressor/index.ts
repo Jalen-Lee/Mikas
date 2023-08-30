@@ -25,8 +25,6 @@ import { Uri } from "vscode";
 const tinify = Tinify.default;
 const sizeOf = util.promisify(imageSize.default);
 
-logger.info("env", process.env.NODE_ENV);
-
 export default class ImageCompressor {
   private tempFolder: vscode.Uri;
   private vsCodeContext: vscode.ExtensionContext;
