@@ -42,6 +42,14 @@ export function isDirectorySync(path: string) {
   return fs.statSync(path).isDirectory;
 }
 
+export function isGIF(filename: string) {
+  return /\.(gif)$/gi.test(filename);
+}
+
+export function isSvga(filename: string) {
+  return /\.(svga)$/gi.test(filename);
+}
+
 export function isAvailableTinypngExt(filename: string) {
   return /\.(png|jpg|jpeg|webp)$/gi.test(filename);
 }
@@ -51,7 +59,7 @@ export function isAvailableSvgoExt(filename: string) {
 }
 
 export function isAvailableImage(filename: string) {
-  return isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename);
+  return isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename) || isGIF(filename);
 }
 
 export function sleep(time) {

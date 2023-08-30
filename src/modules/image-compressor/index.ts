@@ -6,7 +6,7 @@ import * as svgo from "svgo";
 import * as imageSize from "image-size";
 import { nanoid } from "nanoid";
 import WebviewLoader from "./webview-loader";
-import { getDirectoryStructure, isAvailableImage, isAvailableSvgoExt, isAvailableTinypngExt, isDev, sleep } from "./utils";
+import { getDirectoryStructure, isAvailableImage, isAvailableSvgoExt, isAvailableTinypngExt, isDev, isGIF, sleep } from "./utils";
 import {
   WebviewIPCSignal,
   type IPCMessage,
@@ -208,6 +208,8 @@ export default class ImageCompressor {
         return () => this.tinifyCompress(file.fsPath, tempUri);
       } else if (isAvailableSvgoExt(file.ext)) {
         return () => this.svgoCompress(file.fsPath, tempUri);
+      } else if (isGIF(file.ext)) {
+        return () => this.gifCompress(file.fsPath, tempUri);
       } else {
         return () => Promise.resolve();
       }
@@ -363,6 +365,8 @@ export default class ImageCompressor {
       }
     });
   }
+
+  private async gifCompress(fsPath: string, tempUri: vscode.Uri) {}
 
   private async handleCompressFilesCommand(
     payload: {
