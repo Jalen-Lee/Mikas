@@ -3,6 +3,7 @@ import * as Tinify from "tinify";
 import * as path from "path";
 import * as util from "util";
 import * as svgo from "svgo";
+import * as fs from "fs";
 import * as imageSize from "image-size";
 import { nanoid } from "nanoid";
 import WebviewLoader from "./webview-loader";
@@ -21,11 +22,13 @@ import {
 import logger from "./utils/logger";
 import type { ISizeCalculationResult } from "image-size/dist/types/interface";
 import { Uri } from "vscode";
+import sharp from "sharp";
 
 const tinify = Tinify.default;
 const sizeOf = util.promisify(imageSize.default);
 
 export default class ImageCompressor {
+  // private sharp: any;
   private tempFolder: vscode.Uri;
   private vsCodeContext: vscode.ExtensionContext;
   private ignorePatterns: string[];
@@ -42,7 +45,17 @@ export default class ImageCompressor {
     }
     ImageCompressor.instance = this;
     this.vsCodeContext = context;
+    this.libvipsInit();
     this.webviewInit();
+  }
+
+  private async libvipsInit() {
+    const vendorDir = path.resolve(this.vsCodeContext.extensionUri.fsPath, "../vendor");
+    if (fs.existsSync(vendorDir)) {
+      logger.info("vendorDir", "exists");
+    } else {
+      logger.info("vendorDir", "no exists");
+    }
   }
 
   private configInit() {
@@ -364,7 +377,42 @@ export default class ImageCompressor {
     });
   }
 
-  private async gifCompress(fsPath: string, tempUri: vscode.Uri) {}
+  private async gifCompress(fsPath: string, tempUri: vscode.Uri) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const postfix = vscode.workspace.getConfiguration("mikas").get<string>("compressedFilePostfix") || "";
+        const image = sharp(fsPath, {
+          animated: true,
+          limitInputPixels: false,
+        });
+        const metadata = await image.metadata();
+        const parsedPath = path.parse(fsPath);
+        const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
+        const destinationUri = vscode.Uri.parse(destinationFsPath);
+        await image
+          .gif({
+            colors: 50,
+          })
+          .toFile(destinationFsPath);
+        const stat = await vscode.workspace.fs.stat(destinationUri);
+        const dimensions = await sizeOf(destinationFsPath);
+        resolve({
+          key: fsPath,
+          sourceFsPath: fsPath,
+          destinationFsPath: destinationFsPath,
+          optimizedSize: stat.size,
+          optimizedDimensions: dimensions,
+        });
+      } catch (e) {
+        logger.error("gifCompress", e);
+        reject({
+          key: fsPath,
+          sourceFsPath: fsPath,
+          errorMessage: e.message,
+        });
+      }
+    });
+  }
 
   private async handleCompressFilesCommand(
     payload: {
