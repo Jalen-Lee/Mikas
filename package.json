@@ -1,7 +1,7 @@
 {
   "name": "mikas",
   "displayName": "Mikas - Image Compressor",
-  "description": "Helps you to compress commonly used image formats faster and better.Support PNG,JPG/JPEG,WebP,SVG.",
+  "description": "Helps you to compress commonly used image formats faster and better.Support PNG,JPG/JPEG,WebP,SVG,GIF,SVGA.",
   "homepage": "https://github.com/Jalen-Lee/Mikas/blob/main/README.md",
   "version": "1.2.1",
   "author": "JaylenLee",
@@ -160,6 +160,7 @@
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
+    "copy-webpack-plugin": "^11.0.0",
     "eslint": "^8.41.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
