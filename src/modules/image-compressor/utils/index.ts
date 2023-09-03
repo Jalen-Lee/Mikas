@@ -59,7 +59,7 @@ export function isAvailableSvgoExt(filename: string) {
 }
 
 export function isAvailableImage(filename: string) {
-  return isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename) || isGIF(filename);
+  return isSvga(filename) || isAvailableTinypngExt(filename) || isAvailableSvgoExt(filename) || isGIF(filename);
 }
 
 export function sleep(time) {
@@ -157,13 +157,6 @@ export async function getDirectoryStructure<T>(
   return undefined;
 }
 
-/**
- * @default 获取可处理图片的目录结构,生成节点树
- * @param uri 入口
- * @param webview webview实例
- * @param parentUri 父目录
- * @returns
- */
 export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webview: vscode.Webview, parentUri?: vscode.Uri, ignores?: string[]): Promise<WorkspaceNode> {
   // @ts-ignore
   return getDirectoryStructure<ImageDirectoryStructureNode>(
@@ -172,7 +165,12 @@ export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webvi
     isAvailableImage,
     //@ts-ignore
     async (node: DirectoryStructureNode) => {
-      const dimensions = await sizeOf(node.fsPath);
+      const dimensions = isSvga(node.fsPath)
+        ? {
+            with: 0,
+            height: 0,
+          }
+        : await sizeOf(node.fsPath);
       return {
         compressedState: CompressedState.IDLE,
         sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),

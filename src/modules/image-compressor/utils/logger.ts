@@ -1,11 +1,7 @@
 type LogLevel = "info" | "warning" | "error";
 
-/**
- * logger.info('This is an information message');
- * logger.warn('This is a warning message');
- * logger.error('This is an error message');
- */
 export class Logger {
+  private static enable = process.env.NODE_ENV === "development";
   private static instance: Logger;
   private levels: LogLevel[] = ["info", "warning", "error"];
   private logLevel: LogLevel;
@@ -33,7 +29,7 @@ export class Logger {
   }
 
   private log(level: LogLevel, flag: string, message: any): void {
-    if (this.shouldLog(level)) {
+    if (Logger.enable && this.shouldLog(level)) {
       const _logger = this._logger[level] || console.log;
       _logger(`[${level.toUpperCase()} => ${flag}]: `, message);
     }

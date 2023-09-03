@@ -45,11 +45,19 @@ export interface ImageDirectoryStructureNode {
   dimensions: {
     width: number;
     height: number;
+    error?: string;
+    // svga only
+    viewBoxWidth?: number;
+    viewBoxHeight?: number;
+    fps?: number;
+    frames?: number;
+    version?: string;
   };
   optimizedDimensions: {
     width: number;
     height: number;
   };
+  extra?: Record<string, any>;
   children?: Array<ImageDirectoryStructureNode>;
 }
 
@@ -73,4 +81,20 @@ export enum ExtensionIPCSignal {
 export enum ExecutedStatus {
   Fulfilled = "fulfilled",
   Rejected = "rejected",
+}
+
+export declare namespace SvgaParsed {
+  interface MovieParams {
+    viewBoxWidth: number;
+    viewBoxHeight: number;
+    fps: number;
+    frames: number;
+  }
+  interface MovieEntity {
+    version: string;
+    sprites: any[];
+    params: MovieParams;
+    images: Record<string, Uint8Array>;
+    audios: any[];
+  }
 }

@@ -371,7 +371,7 @@ function App() {
           <div className="h-full flex flex-1">
             <div className="flex-1 flex justify-center items-center px-[20px]">
               {currentFile ? (
-                <ImageViewer src={currentFile.sourceWebviewUri} size={currentFile.size} title="Raw" dimensions={currentFile.dimensions} className="flex-1 h-full" />
+                <ImageViewer src={currentFile.sourceWebviewUri} size={currentFile.size} title="Raw" dimensions={currentFile.dimensions} ext={currentFile.parsedInfo.ext} className="flex-1 h-full" />
               ) : null}
             </div>
             <div className="h-full w-2 bg-[#252526]"></div>
@@ -382,6 +382,7 @@ function App() {
                   dimensions={currentFile.optimizedDimensions}
                   size={currentFile.optimizedSize}
                   title="Optimized"
+                  ext={currentFile.parsedInfo.ext}
                   className="flex-1 h-full"
                 />
               )}

@@ -13,3 +13,4 @@ vsc-extension-quickstart.md
 **/*.ts
 .idea
 .DS_Store
+.mikas
