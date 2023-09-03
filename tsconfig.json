@@ -17,6 +17,7 @@
       "@modules/*": ["./src/modules/*"],
       "@image-compressor/*": ["./src/modules/image-compressor/*"]
     }
+    // "typeRoots": ["node_modules/@types", "src/modules/image-compressor/typing"]
   },
   "exclude": ["node_modules", ".vscode-test", "./src/modules/image-compressor/webview"]
 }

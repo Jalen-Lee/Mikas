@@ -1,12 +1,12 @@
 import * as fs from "fs/promises";
 import * as pako from "pako";
 import protobuf from "protobufjs";
-import sharp from "sharp";
-import logger from "./logger";
-import svgaProto from "../config/svgaProto.json";
-import { SvgaParsed } from "../typing";
+import svgaProto from "@image-compressor/config/svgaProto.json";
+import { SvgaParsed } from "@image-compressor/typing";
+import type sharp from "sharp";
 
 class SvgaUtility {
+  private sharp: typeof sharp | undefined;
   public protoMovieEntity = protobuf.Root.fromJSON(svgaProto).lookupType("com.opensource.svga.MovieEntity");
 
   public async parse(fsPath: string): Promise<{
@@ -14,7 +14,6 @@ class SvgaUtility {
   }> {
     const buffer = await fs.readFile(fsPath);
     const movieEntity = this.protoMovieEntity.decode(pako.inflate(Uint8Array.from(buffer)));
-    logger.info("svga.movieEntity", movieEntity);
     return {
       movieEntity: movieEntity as unknown as SvgaParsed.MovieEntity,
     };
@@ -22,9 +21,12 @@ class SvgaUtility {
 
   public async compress(fsPath: string, destinationFsPath: string) {
     const { movieEntity } = await this.parse(fsPath);
+    if (!this.sharp) {
+      this.sharp = (await import("sharp")).default;
+    }
     const result = {};
     for (const [frame, buffer] of Object.entries(movieEntity.images)) {
-      const optimizedBuffer = await sharp(buffer)
+      const optimizedBuffer = await this.sharp(buffer)
         .png({
           quality: 75,
           palette: true,

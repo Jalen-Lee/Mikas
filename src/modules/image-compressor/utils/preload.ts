@@ -9,9 +9,9 @@ import logger from "./logger";
 const env = process.env;
 const platformAndArch = getPlatform();
 const extensionFsPath = path.resolve(__dirname, "../");
-const vendorFsPath = path.resolve(extensionFsPath, "../");
+const vendorFsPath = path.resolve(extensionFsPath, "../vendor");
 const libvipsVersion = "8.14.4";
-const libvipsFsPath = path.resolve(__dirname, `./assets/libvips-${libvipsVersion}`);
+const libvipsFsPath = path.resolve(extensionFsPath, `./assets/libvips-${libvipsVersion}`);
 const prebuild = {
   "darwin-arm64v8": path.resolve(libvipsFsPath, "libvips-8.14.4-darwin-arm64v8.tar.br"),
   "darwin-x64": path.resolve(libvipsFsPath, "libvips-8.14.4-darwin-x64.tar.br"),
@@ -24,20 +24,31 @@ const prebuild = {
   "win32-x64": path.resolve(libvipsFsPath, "libvips-8.14.4-win32-x64.tar.br"),
 };
 
+logger.info("platform", getPlatform());
 logger.info("extensionFsPath", extensionFsPath);
 logger.info("vendorFsPath", vendorFsPath);
 logger.info("libvipsFsPath", libvipsFsPath);
 
-try {
-  if (fs.existsSync(vendorFsPath)) {
-    fs.rmSync(vendorFsPath);
+(async () => {
+  try {
+    if (fs.existsSync(vendorFsPath)) {
+      fs.rmSync(vendorFsPath, {
+        recursive: true,
+      });
+    }
+    fs.mkdirSync(vendorFsPath);
+    await extractTarball(prebuild[platformAndArch]);
+  } catch (e) {
+    errorhandler(e);
   }
-  fs.mkdirSync(vendorFsPath);
-  console.log(222);
-  extractTarball(prebuild[platformAndArch]);
-  logger.info("env", env);
-  logger.info("platform", getPlatform());
-} catch (e) {}
+})();
+
+function errorhandler(error) {
+  if (error) {
+    logger.error("libvips.load", error);
+    process.env.mikas_libvips_loaded = "false";
+  }
+}
 
 function getPlatform() {
   const arch = env.npm_config_arch || process.arch;
@@ -64,17 +75,12 @@ function getPlatform() {
 }
 
 async function extractTarball(tarPath: string) {
-  console.log("tarPath", tarPath);
   const versionedVendorPath = path.join(vendorFsPath, libvipsVersion, platformAndArch);
   await stream.pipeline(
     fs.createReadStream(tarPath),
     // @ts-ignore
     new zlib.BrotliDecompress(),
     tarFs.extract(versionedVendorPath),
-    function (err) {
-      if (err) {
-        logger.error("extract", err);
-      }
-    }
+    errorhandler
   );
 }

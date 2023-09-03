@@ -1,5 +1,12 @@
 import type { ParsedPath } from "path";
 
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NODE_ENV: "development" | "production";
+    mikas_libvips_loaded: boolean;
+  }
+}
+
 export interface IPCMessage {
   signal: string;
   payload: any;

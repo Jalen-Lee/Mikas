@@ -136,7 +136,7 @@
     ]
   },
   "scripts": {
-    "postinstall": "patch-package",
+    "postinstall": "chmod 755 ./bin/postinstall.sh && ./bin/postinstall.sh",
     "vscode:prepublish": "npm run build",
     "compile": "webpack",
     "watch": "NODE_ENV=development webpack --watch",
@@ -155,6 +155,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
     "@types/pako": "^2.0.0",
+    "@types/tar-fs": "^2.0.1",
     "@types/vscode": "^1.51.0",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",

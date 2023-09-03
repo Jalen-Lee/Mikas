@@ -21,7 +21,7 @@ import {
 import logger from "./utils/logger";
 import type { ISizeCalculationResult } from "image-size/dist/types/interface";
 import { Uri } from "vscode";
-import sharp from "sharp";
+import type sharp from "sharp";
 import svgaUtility from "./utils/svga";
 
 const tinify = Tinify.default;
@@ -40,7 +40,7 @@ enum VSCODE_COMMAND {
 }
 
 export default class ImageCompressor {
-  public readonly name: "Mikas - Image Compressor";
+  public readonly name = "Mikas - Image Compressor";
   private tempFolder: vscode.Uri;
   private vsCodeContext: vscode.ExtensionContext;
   private ignorePatterns: string[];
@@ -49,6 +49,7 @@ export default class ImageCompressor {
   private webviewIdTempFolderMap = new Map<string, vscode.Uri>();
   private readonly disposers: vscode.Disposable[] = [];
   private static instance: ImageCompressor | undefined;
+  private sharp: typeof sharp | undefined;
 
   constructor(context: vscode.ExtensionContext) {
     if (ImageCompressor.instance) {
@@ -403,7 +404,10 @@ export default class ImageCompressor {
     return new Promise(async (resolve, reject) => {
       try {
         const postfix = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.CompressedFilePostfix) || "";
-        const image = sharp(fsPath, {
+        if (!this.sharp) {
+          this.sharp = (await import("sharp")).default;
+        }
+        const image = this.sharp(fsPath, {
           animated: true,
           limitInputPixels: false,
         });
