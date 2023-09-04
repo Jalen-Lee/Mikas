@@ -23,6 +23,7 @@ import logger from "./utils/logger";
 import type { ISizeCalculationResult } from "image-size/dist/types/interface";
 import { Uri } from "vscode";
 import svgaUtility from "./utils/svga";
+import open from "open";
 
 const tinify = Tinify.default;
 const sizeOf = util.promisify(imageSize.default);
@@ -642,8 +643,7 @@ export default class ImageCompressor {
   }
 
   private handleOpenFileInExplorerCommand(payload: { file: string }) {
-    const fileUri = vscode.Uri.file(payload.file);
-    vscode.env.openExternal(fileUri);
+    open(payload.file);
   }
 
   private setWebviewMessageListener(webview: vscode.Webview) {
