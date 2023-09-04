@@ -3,10 +3,12 @@ import * as pako from "pako";
 import protobuf from "protobufjs";
 import svgaProto from "@image-compressor/config/svgaProto.json";
 import { SvgaParsed } from "@image-compressor/typing";
-import type sharp from "sharp";
+import * as os from "os";
+
+const QUALITY = 70;
 
 class SvgaUtility {
-  private sharp: typeof sharp | undefined;
+  private sharp: typeof import("sharp") | undefined;
   public protoMovieEntity = protobuf.Root.fromJSON(svgaProto).lookupType("com.opensource.svga.MovieEntity");
 
   public async parse(fsPath: string): Promise<{
@@ -23,12 +25,15 @@ class SvgaUtility {
     const { movieEntity } = await this.parse(fsPath);
     if (!this.sharp) {
       this.sharp = (await import("sharp")).default;
+      // Reducing concurrency should reduce the memory usage too.
+      const divisor = process.env.NODE_ENV === "development" ? 4 : 2;
+      this.sharp.concurrency(Math.floor(Math.max(os.cpus().length / divisor, 1)));
     }
     const result = {};
     for (const [frame, buffer] of Object.entries(movieEntity.images)) {
       const optimizedBuffer = await this.sharp(buffer)
         .png({
-          quality: 75,
+          quality: QUALITY,
           palette: true,
         })
         .toBuffer();

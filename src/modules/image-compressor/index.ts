@@ -4,6 +4,7 @@ import * as path from "path";
 import * as util from "util";
 import * as svgo from "svgo";
 import * as imageSize from "image-size";
+import * as os from "os";
 import { nanoid } from "nanoid";
 import WebviewLoader from "./webview-loader";
 import { getDirectoryStructure, isAvailableImage, isAvailableSvgoExt, isAvailableTinypngExt, isDev, isGIF, isSvga, sleep } from "./utils";
@@ -21,7 +22,6 @@ import {
 import logger from "./utils/logger";
 import type { ISizeCalculationResult } from "image-size/dist/types/interface";
 import { Uri } from "vscode";
-import type sharp from "sharp";
 import svgaUtility from "./utils/svga";
 
 const tinify = Tinify.default;
@@ -49,7 +49,7 @@ export default class ImageCompressor {
   private webviewIdTempFolderMap = new Map<string, vscode.Uri>();
   private readonly disposers: vscode.Disposable[] = [];
   private static instance: ImageCompressor | undefined;
-  private sharp: typeof sharp | undefined;
+  private sharp: typeof import("sharp") | undefined;
 
   constructor(context: vscode.ExtensionContext) {
     if (ImageCompressor.instance) {
@@ -407,6 +407,9 @@ export default class ImageCompressor {
         const postfix = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.CompressedFilePostfix) || "";
         if (!this.sharp) {
           this.sharp = (await import("sharp")).default;
+          // Reducing concurrency should reduce the memory usage too.
+          const divisor = process.env.NODE_ENV === "development" ? 4 : 2;
+          this.sharp.concurrency(Math.floor(Math.max(os.cpus().length / divisor, 1)));
         }
         const image = this.sharp(fsPath, {
           animated: true,
