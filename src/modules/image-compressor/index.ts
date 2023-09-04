@@ -608,14 +608,16 @@ export default class ImageCompressor {
 
   private async createWebviewPanel() {
     const allWorkspaceUri = vscode.workspace.workspaceFolders.map((i) => i.uri);
+    logger.info("allWorkspaceUri", allWorkspaceUri);
+    logger.info("vscode.workspace.workspaceFile", vscode.workspace.workspaceFile);
     const panel = vscode.window.createWebviewPanel(CONFIG_SECTION, this.name, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
       localResourceRoots: [
+        ...allWorkspaceUri,
         isDev
           ? vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "src", "modules", "image-compressor", "webview", "dist")
           : vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "dist", "image-compressor-dist"),
-        ...allWorkspaceUri,
       ],
     });
     panel.iconPath = vscode.Uri.joinPath(this.vsCodeContext.extensionUri, "assets", "icon.png");

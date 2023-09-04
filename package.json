@@ -136,12 +136,11 @@
     ]
   },
   "scripts": {
-    "postinstall": "chmod 755 ./bin/postinstall.sh && ./bin/postinstall.sh",
+    "postinstall": "cross-os postinstall",
     "vscode:prepublish": "npm run build",
     "compile": "webpack",
-    "watch": "NODE_ENV=development webpack --watch",
-    "build: extension": "webpack --mode production --devtool hidden-source-map",
-    "build": "chmod 755 ./bin/package.sh && ./bin/package.sh",
+    "watch": "cross-env NODE_ENV=development webpack --watch",
+    "build": "cross-os build",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
@@ -149,6 +148,18 @@
     "test": "node ./out/test/runTest.js",
     "package": "vsce package",
     "publish": "vsce publish"
+  },
+  "cross-os": {
+    "postinstall": {
+      "darwin": "chmod 755 ./bin/postinstall.sh && ./bin/postinstall.sh",
+      "win32": "set-executionpolicy -executionpolicy Restricted && ./bin/postinstall.ps1",
+      "linux": "chmod 755 ./bin/postinstall.sh && ./bin/postinstall.sh"
+    },
+    "build": {
+      "darwin": "chmod 755 ./bin/build.sh && ./bin/build.sh",
+      "win32": "set-executionpolicy -executionpolicy Restricted && ./bin/build.ps1",
+      "linux": "chmod 755 ./bin/build.sh && ./bin/build.sh"
+    }
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -161,6 +172,9 @@
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
     "copy-webpack-plugin": "^11.0.0",
+    "cpy-cli": "^5.0.0",
+    "cross-env": "^7.0.3",
+    "cross-os": "^1.5.0",
     "eslint": "^8.41.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

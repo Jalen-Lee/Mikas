@@ -3,7 +3,7 @@
 # build extension
 pwdStr="$(pwd)"
 echo "$pwdStr"
-NODE_ENV=production webpack --mode production --devtool hidden-source-map
+cross-env NODE_ENV=production webpack --mode production --devtool hidden-source-map
 
 # build image-compressor
 cd ./src/modules/image-compressor/webview
