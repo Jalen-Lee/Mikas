@@ -8,7 +8,7 @@ export default function WorkspaceNodeTitle(props: WorkspaceNode) {
   const { name, compressedState = CompressedState.IDLE, optimizedSize, size, errorMessage } = props;
 
   return (
-    <div className="flex justify-between items-center flex-1 px-[4px]">
+    <div className="flex justify-between items-center flex-1 px-[4px] text-white">
       <div className={`flex items-center ${compressedState === CompressedState.REJECTED ? "text-red-500" : ""}`}>{name}</div>
       <div className="flex items-center">
         {compressedState === CompressedState.PENDING && (

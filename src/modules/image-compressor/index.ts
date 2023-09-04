@@ -167,7 +167,6 @@ export default class ImageCompressor {
             error: `[Parse Error]: ${e}`,
           };
         }
-        logger.info("$$", webview.asWebviewUri(Uri.file(node.fsPath)).toString());
         return {
           compressedState: dimensions.error ? CompressedState.REJECTED : CompressedState.IDLE,
           sourceWebviewUri: webview.asWebviewUri(Uri.file(node.fsPath)).toString(),
