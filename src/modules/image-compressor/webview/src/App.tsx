@@ -389,8 +389,9 @@ function App() {
             </div>
           </div>
         </main>
-        <footer className="px-[12px] h-[46px] flex justify-between items-center border-t-[1px] border-solid border-[#414141] ">
+        <footer className="px-[12px] h-[44px] flex justify-between items-center border-t-[1px] border-solid border-[#414141] ">
           <div className="flex gap-x-[12px] text-white items-center h-full">
+            {/*@ts-ignore*/}
             <Tooltip
               className="text-[0px]"
               trigger="click"

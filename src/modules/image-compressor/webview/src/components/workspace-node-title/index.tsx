@@ -25,6 +25,7 @@ export default function WorkspaceNodeTitle(props: WorkspaceNode) {
         )}
         {compressedState === CompressedState.REJECTED && (
           <>
+            {/*@ts-ignore*/}
             <Tooltip title={errorMessage} position="bottom" trigger="mouseenter" arrow={true} distance={5}>
               <div className="flex items-center">
                 <WarningFilled className="text-red-500 mr-[6px]" />

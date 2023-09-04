@@ -46,7 +46,7 @@ function ImageViewer(props: ImageViewerProps) {
     }
   }, [src]);
   return (
-    <div className={`flex flex-col px-[10px] ${className}`} style={{ ...style }}>
+    <div className={`flex flex-col px-[10px] text-white ${className}`} style={{ ...style }}>
       <header className="flex justify-center py-[20px] items-center">
         <span className="text-[16px]">{title}</span>
       </header>
