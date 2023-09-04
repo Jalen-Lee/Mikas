@@ -85,7 +85,7 @@ export function globIgnoreFilter(ignore: string[], path: string) {
  */
 export async function getDirectoryStructure<T>(
   uri: vscode.Uri,
-  parentUri: vscode.Uri = vscode.Uri.parse("/"),
+  parentUri: vscode.Uri = vscode.Uri.file("/"),
   filter?: (fsPath: string) => Boolean,
   mapped?: (node: DirectoryStructureNode) => Promise<DirectoryStructureNode & T>,
   ignores?: string[]
@@ -173,7 +173,7 @@ export async function getAvailableImageDirectoryStructure(uri: vscode.Uri, webvi
         : await sizeOf(node.fsPath);
       return {
         compressedState: CompressedState.IDLE,
-        sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),
+        sourceWebviewUri: webview.asWebviewUri(Uri.file(node.fsPath)).toString(),
         optimizedFsPath: "",
         optimizedWebviewUri: "",
         optimizedSize: 0,

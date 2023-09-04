@@ -166,9 +166,10 @@ export default class ImageCompressor {
             error: `[Parse Error]: ${e}`,
           };
         }
+        logger.info("$$", webview.asWebviewUri(Uri.file(node.fsPath)).toString());
         return {
           compressedState: dimensions.error ? CompressedState.REJECTED : CompressedState.IDLE,
-          sourceWebviewUri: webview.asWebviewUri(Uri.parse(node.fsPath)).toString(),
+          sourceWebviewUri: webview.asWebviewUri(Uri.file(node.fsPath)).toString(),
           optimizedFsPath: "",
           optimizedWebviewUri: "",
           optimizedSize: 0,
@@ -343,7 +344,7 @@ export default class ImageCompressor {
               errorMessage,
             });
           } else {
-            const stat = await vscode.workspace.fs.stat(vscode.Uri.parse(destinationFsPath));
+            const stat = await vscode.workspace.fs.stat(vscode.Uri.file(destinationFsPath));
             const dimensions = await sizeOf(destinationFsPath);
             resolve({
               key: fsPath,
@@ -374,11 +375,11 @@ export default class ImageCompressor {
     return new Promise(async (resolve, reject) => {
       try {
         const postfix = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.CompressedFilePostfix) || "";
-        const svgBuffer = await vscode.workspace.fs.readFile(vscode.Uri.parse(fsPath));
+        const svgBuffer = await vscode.workspace.fs.readFile(vscode.Uri.file(fsPath));
         const output = svgo.optimize(svgBuffer.toString(), {});
         const parsedPath = path.parse(fsPath);
         const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
-        const destinationUri = vscode.Uri.parse(destinationFsPath);
+        const destinationUri = vscode.Uri.file(destinationFsPath);
         await vscode.workspace.fs.writeFile(destinationUri, Buffer.from(output.data));
         const stat = await vscode.workspace.fs.stat(destinationUri);
         const dimensions = await sizeOf(destinationFsPath);
@@ -414,7 +415,7 @@ export default class ImageCompressor {
         const metadata = await image.metadata();
         const parsedPath = path.parse(fsPath);
         const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
-        const destinationUri = vscode.Uri.parse(destinationFsPath);
+        const destinationUri = vscode.Uri.file(destinationFsPath);
         await image
           .gif({
             colors: 50,
@@ -446,7 +447,7 @@ export default class ImageCompressor {
         const postfix = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.CompressedFilePostfix) || "";
         const parsedPath = path.parse(fsPath);
         const destinationFsPath = path.join(tempUri.fsPath, `${parsedPath.name}${postfix}${parsedPath.ext}`);
-        const destinationUri = vscode.Uri.parse(destinationFsPath);
+        const destinationUri = vscode.Uri.file(destinationFsPath);
         const { destination, parsedInfo } = await svgaUtility.compress(fsPath, destinationFsPath);
         const stat = await vscode.workspace.fs.stat(destinationUri);
         resolve({
@@ -496,7 +497,7 @@ export default class ImageCompressor {
               status: ExecutedStatus.Fulfilled,
               data: {
                 ...res,
-                optimizedWebviewUri: senderWebview.asWebviewUri(vscode.Uri.parse(res.destinationFsPath)).toString(),
+                optimizedWebviewUri: senderWebview.asWebviewUri(vscode.Uri.file(res.destinationFsPath)).toString(),
               },
               error: "",
             },
@@ -554,14 +555,14 @@ export default class ImageCompressor {
       const forceOverwrite = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.ForceOverwrite) || "";
       const taskPromises = files.map((file) => {
         return new Promise((resolve, reject) => {
-          const tempUri = vscode.Uri.parse(file.tempFsPath);
+          const tempUri = vscode.Uri.file(file.tempFsPath);
           let sourceUri: vscode.Uri;
           if (forceOverwrite) {
-            sourceUri = vscode.Uri.parse(file.sourceFsPath);
+            sourceUri = vscode.Uri.file(file.sourceFsPath);
           } else {
             const sourceParsedInfo = path.parse(file.sourceFsPath);
             const tempParsedInfo = path.parse(file.tempFsPath);
-            sourceUri = vscode.Uri.parse(`${sourceParsedInfo.dir}/${tempParsedInfo.base}`);
+            sourceUri = vscode.Uri.file(`${sourceParsedInfo.dir}/${tempParsedInfo.base}`);
           }
           Promise.resolve(vscode.workspace.fs.copy(tempUri, sourceUri, { overwrite: true }))
             .then(() => {
@@ -633,12 +634,12 @@ export default class ImageCompressor {
   }
 
   private async handleOpenFileCommand(payload: { file: string }) {
-    const fileUri = vscode.Uri.parse(`vscode://file${payload.file}`);
+    const fileUri = vscode.Uri.file(`vscode://file${payload.file}`);
     vscode.env.openExternal(fileUri);
   }
 
   private handleOpenFileInExplorerCommand(payload: { file: string }) {
-    const fileUri = vscode.Uri.parse(payload.file);
+    const fileUri = vscode.Uri.file(payload.file);
     vscode.env.openExternal(fileUri);
   }
 
