@@ -328,7 +328,7 @@ function App() {
           <div className="relative h-full w-[450px]">
             <div className="h-full px-[12px] pb-[12px] bg-[#333333] w-full overflow-auto flex flex-col relative">
               {isWorkspaceLoading ? (
-                <div className="flex flex-1 h-full items-center justify-center">
+                <div className="flex flex-1 h-full items-center justify-center text-white">
                   <Loading3QuartersOutlined spin className="mx-[6px]" />
                   <p>Workspace resolving...</p>
                 </div>
