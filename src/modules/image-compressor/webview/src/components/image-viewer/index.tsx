@@ -50,7 +50,7 @@ function ImageViewer(props: ImageViewerProps) {
       <header className="flex justify-center py-[20px] items-center">
         <span className="text-[16px]">{title}</span>
       </header>
-      <main className="flex flex-1 justify-center items-center flex-grow-0">
+      <main className="flex flex-1 justify-center items-center">
         {
           ext === ".svga" ? (
             <div
@@ -80,16 +80,25 @@ function ImageViewer(props: ImageViewerProps) {
           )
         }
       </main>
-      <footer className="flex justify-center items-center py-[20px] text-[16px] text-white">
+      <footer className="flex justify-center items-center py-[20px] text-[14px] text-white">
         {
-          ext === ".svga" ? <p className="flex gap-x-[6px]">
-              <span>{`${dimensions.width}×${dimensions.height}`}</span>
-              <span>{`SVGA/${dimensions.version}`}</span>
-              <span>{`FPS: ${dimensions.fps}`}</span>
-              <span>{`Frames: ${dimensions.frames}`}</span>
-              <span>{formatFileSize(size)}</span>
-            </p> :
-            <span>{`${dimensions.width}×${dimensions.height} ${formatFileSize(size)}`}</span>
+          ext === ".svga" ? <div className="flex gap-y-[6px] flex-col">
+              <p className="flex gap-x-[6px] justify-center items-center">
+                <span className="font-[800]">{formatFileSize(size)}</span>
+              </p>
+              <p className="flex gap-x-[6px] justify-center items-center">
+                <span>{`${dimensions.width}×${dimensions.height}`}</span>
+                <span>{`SVGA/${dimensions.version}`}</span>
+              </p>
+              <p className="flex gap-x-[6px] justify-center items-center">
+                <span>{`FPS: ${dimensions.fps}`}</span>
+                <span>{`Frames: ${dimensions.frames}`}</span>
+              </p>
+            </div> :
+            <p className="flex gap-x-[6px]">
+              <span>{dimensions.width}×{dimensions.height}</span>
+              <span className="font-[800]">{formatFileSize(size)}</span>
+            </p>
         }</footer>
     </div>
   );

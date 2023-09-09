@@ -15,10 +15,12 @@
     "@devbookhq/splitter": "^1.4.2",
     "@vscode/codicons": "^0.0.33",
     "@vscode/webview-ui-toolkit": "^1.2.2",
+    "allotment": "^1.19.3",
     "rc-tree": "^5.7.9",
     "react": "^18.2.0",
     "react-contexify": "^6.0.0",
     "react-dom": "^18.2.0",
+    "react-split-pane": "^0.1.92",
     "react-tippy": "^1.4.0",
     "svgaplayerweb": "^2.3.2"
   },
