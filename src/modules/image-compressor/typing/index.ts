@@ -1,5 +1,12 @@
 import type { ParsedPath } from "path";
 
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NODE_ENV: "development" | "production";
+    mikas_libvips_loaded: boolean;
+  }
+}
+
 export interface IPCMessage {
   signal: string;
   payload: any;
@@ -45,11 +52,19 @@ export interface ImageDirectoryStructureNode {
   dimensions: {
     width: number;
     height: number;
+    error?: string;
+    // svga only
+    viewBoxWidth?: number;
+    viewBoxHeight?: number;
+    fps?: number;
+    frames?: number;
+    version?: string;
   };
   optimizedDimensions: {
     width: number;
     height: number;
   };
+  extra?: Record<string, any>;
   children?: Array<ImageDirectoryStructureNode>;
 }
 
@@ -57,20 +72,41 @@ export type WorkspaceNode = DirectoryStructureNode & ImageDirectoryStructureNode
 
 export enum WebviewIPCSignal {
   Compress = "webview.compress",
+  CompressCurrent = "webview.compressCurrent",
   Save = "webview.save",
+  SaveCurrent = "webview.saveCurrent",
   OpenFile = "webview.openFile",
   OpenFileInExplorer = "webview.openFileInExplorer",
 }
 
 export enum ExtensionIPCSignal {
   Init = "extension.init",
+  TinypngUsageUpdate = "extension.tinypngUsageUpdate",
   Compressed = "extension.compressed",
   AllCompressed = "extension.allCompressed",
+  CurrentCompressed = "extension.currentCompressed",
   Saved = "extension.saved",
+  CurrentSaved = "extension.currentSaved",
   AllSaved = "extension.AllSaved",
 }
 
 export enum ExecutedStatus {
   Fulfilled = "fulfilled",
   Rejected = "rejected",
+}
+
+export declare namespace SvgaParsed {
+  interface MovieParams {
+    viewBoxWidth: number;
+    viewBoxHeight: number;
+    fps: number;
+    frames: number;
+  }
+  interface MovieEntity {
+    version: string;
+    sprites: any[];
+    params: MovieParams;
+    images: Record<string, Uint8Array>;
+    audios: any[];
+  }
 }

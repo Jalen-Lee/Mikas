@@ -4,6 +4,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
+const CopyPlugin = require("copy-webpack-plugin");
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -45,6 +46,10 @@ const extensionConfig = {
           },
         ],
       },
+      {
+        test: /\.node$/,
+        loader: "node-loader",
+      },
     ],
   },
   devtool: "nosources-source-map",
@@ -54,6 +59,9 @@ const extensionConfig = {
   plugins: [
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+    }),
+    new CopyPlugin({
+      patterns: [{ from: "./assets/native-node/libvips-cpp.dll", to: "." }],
     }),
   ],
 };

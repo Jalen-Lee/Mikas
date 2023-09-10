@@ -11,8 +11,10 @@ The following common image formats are supported:
 - PNG
 - WebP
 - SVG
+- GIF
+- SVGA
 
-Function implementation based on:
+Partial function implementation based on:
 
 - [tinypng](https://tinypng.com/)
 - [SVGO](https://github.com/svg/svgo)

@@ -1,35 +1,22 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "ES2020",
-		"lib": [
-			"ES2020"
-		],
-		"sourceMap": true,
-		"strict": false,
-		"outDir": "out",
-		"baseUrl": "./",
-		"rootDir": "./",
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"paths": {
-			"@root/*": [
-				"./*"
-			],
-			"@src/*": [
-				"./src/*"
-			],
-			"@modules/*": [
-				"./src/modules/*"
-			],
-			"@image-compressor/*": [
-				"./src/modules/image-compressor/*"
-			]
-		}
-	},
-	"exclude": [
-		"node_modules",
-		".vscode-test",
-		"./src/modules/image-compressor/webview"
-	]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    "sourceMap": true,
+    "strict": false,
+    "outDir": "out",
+    "baseUrl": "./",
+    "rootDir": "./",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@root/*": ["./*"],
+      "@src/*": ["./src/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@image-compressor/*": ["./src/modules/image-compressor/*"]
+    }
+  },
+  "exclude": ["node_modules", ".vscode-test", "./src/modules/image-compressor/webview"]
 }
