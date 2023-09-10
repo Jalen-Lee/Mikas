@@ -1,7 +1,7 @@
 type LogLevel = "info" | "warning" | "error";
 
 export class Logger {
-  private static enable = process.env.NODE_ENV === "development";
+  private static enable = true;
   private static instance: Logger;
   private levels: LogLevel[] = ["info", "warning", "error"];
   private logLevel: LogLevel;

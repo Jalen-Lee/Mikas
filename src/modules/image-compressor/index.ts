@@ -61,12 +61,18 @@ export default class ImageCompressor {
     this.webviewInit();
   }
 
-  private configInit() {
+  private configInit(webview: vscode.Webview) {
     try {
       const ignore = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.Ignore) || "";
       this.ignorePatterns = ignore.replace(/\s/g, "").split(";").filter(Boolean);
-      logger.info("ignorePatterns", this.ignorePatterns);
-      this.tinypngApiKeyValidate();
+      this.tinypngApiKeyValidate().then((res) => {
+        webview.postMessage({
+          signal: ExtensionIPCSignal.TinypngUsageUpdate,
+          payload: {
+            usage: String(res.usage || "0"),
+          },
+        });
+      });
     } catch (e) {
       logger.error("configInit", e);
     }
@@ -84,7 +90,10 @@ export default class ImageCompressor {
         title: "Mikas - Image Compressor: Preparing...",
       },
       (progress, token) => {
-        return new Promise<Boolean>(async (resolve, reject) => {
+        return new Promise<{
+          valid: boolean;
+          usage: number;
+        }>(async (resolve, reject) => {
           try {
             const tinypngApiKey = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.TinypngApiKey) || "";
             logger.info("tinypngApiKey", tinypngApiKey);
@@ -93,7 +102,10 @@ export default class ImageCompressor {
               try {
                 await tinify.validate();
                 this.tinypngApiKeyValid = true;
-                resolve(true);
+                resolve({
+                  valid: true,
+                  usage: tinify.compressionCount,
+                });
               } catch (e) {
                 reject(false);
                 await sleep(500);
@@ -190,11 +202,9 @@ export default class ImageCompressor {
 
   private async webviewInit() {
     const dispose = vscode.commands.registerCommand(VSCODE_COMMAND.Compress, async (entry: vscode.Uri, others: vscode.Uri[]) => {
-      logger.info("entry", entry);
-      logger.info("others", others);
-      this.configInit();
-      await this.createRootTempFolder();
       const { webviewPanel, webviewId } = await this.createWebviewPanel();
+      this.configInit(webviewPanel.webview);
+      await this.createRootTempFolder();
       webviewPanel.onDidDispose(() => {
         this.webviewDestroy(webviewId);
       });
@@ -521,6 +531,12 @@ export default class ImageCompressor {
         Number(concurrency)
       );
       senderWebview.postMessage({
+        signal: ExtensionIPCSignal.TinypngUsageUpdate,
+        payload: {
+          usage: String(tinify.compressionCount || "0"),
+        },
+      });
+      senderWebview.postMessage({
         signal: ExtensionIPCSignal.AllCompressed,
         payload: {
           status: ExecutedStatus.Fulfilled,
@@ -535,6 +551,58 @@ export default class ImageCompressor {
         payload: {
           status: ExecutedStatus.Rejected,
           data: [],
+          error: e.message,
+        },
+      });
+    } finally {
+      statusBarItem.dispose();
+    }
+  }
+
+  private async handleCompressCurrentCommand(
+    payload: {
+      file: { key: string; fsPath: string; ext: string };
+    },
+    senderWebview: vscode.Webview
+  ) {
+    logger.info("handleCompressCurrentCommand", payload);
+    const file = payload.file;
+    const tempUri = this.webviewTempFolderMap.get(senderWebview) || this.tempFolder;
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+    try {
+      let task;
+      if (isAvailableTinypngExt(file.ext)) {
+        task = this.tinifyCompress(file.fsPath, tempUri);
+      } else if (isAvailableSvgoExt(file.ext)) {
+        task = this.svgoCompress(file.fsPath, tempUri);
+      } else if (isGIF(file.ext)) {
+        task = this.gifCompress(file.fsPath, tempUri);
+      } else if (isSvga(file.ext)) {
+        task = this.svgaCompress(file.fsPath, tempUri);
+      } else {
+        task = Promise.resolve();
+      }
+      const res = await task;
+      logger.info("res", res);
+      statusBarItem.text = `${res.sourceFsPath} compress successful!`;
+      statusBarItem.show();
+      senderWebview.postMessage({
+        signal: ExtensionIPCSignal.CurrentCompressed,
+        payload: {
+          status: ExecutedStatus.Fulfilled,
+          data: {
+            ...res,
+            optimizedWebviewUri: senderWebview.asWebviewUri(vscode.Uri.file(res.destinationFsPath)).toString(),
+          },
+          error: "",
+        },
+      });
+    } catch (e) {
+      senderWebview.postMessage({
+        signal: ExtensionIPCSignal.CurrentCompressed,
+        payload: {
+          status: ExecutedStatus.Rejected,
+          data: {},
           error: e.message,
         },
       });
@@ -610,6 +678,62 @@ export default class ImageCompressor {
     }
   }
 
+  private async handleSaveCurrentCommand(
+    payload: {
+      file: {
+        key: string;
+        sourceFsPath: string;
+        tempFsPath: string;
+      };
+    },
+    senderWebview: vscode.Webview
+  ) {
+    const file = payload.file;
+    const forceOverwrite = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>(CONFIG_KEY.ForceOverwrite) || "";
+    const tempUri = vscode.Uri.file(file.tempFsPath);
+    let sourceUri: vscode.Uri;
+    try {
+      if (forceOverwrite) {
+        sourceUri = vscode.Uri.file(file.sourceFsPath);
+      } else {
+        const sourceParsedInfo = path.parse(file.sourceFsPath);
+        const tempParsedInfo = path.parse(file.tempFsPath);
+        sourceUri = vscode.Uri.file(`${sourceParsedInfo.dir}/${tempParsedInfo.base}`);
+      }
+      logger.info("handleSaveCurrentCommand1", payload);
+      await vscode.workspace.fs.copy(tempUri, sourceUri, { overwrite: true });
+      logger.info("handleSaveCurrentCommand2", payload);
+      senderWebview.postMessage({
+        signal: ExtensionIPCSignal.CurrentSaved,
+        payload: {
+          status: ExecutedStatus.Fulfilled,
+          data: {
+            status: ExecutedStatus.Fulfilled,
+            key: file.key,
+            overwrite: forceOverwrite,
+            error: "",
+          },
+          error: "",
+        },
+      });
+    } catch (e) {
+      logger.error("handleSaveCurrentCommand", e);
+      senderWebview.postMessage({
+        signal: ExtensionIPCSignal.CurrentSaved,
+        payload: {
+          status: ExecutedStatus.Rejected,
+          data: {
+            status: ExecutedStatus.Rejected,
+            key: file.key,
+            overwrite: forceOverwrite,
+            error: e.message,
+          },
+          error: e.message,
+        },
+      });
+    }
+  }
+
   private async createWebviewPanel() {
     const allWorkspaceUri = vscode.workspace.workspaceFolders.map((i) => i.uri);
     logger.info("allWorkspaceUri", allWorkspaceUri);
@@ -649,12 +773,19 @@ export default class ImageCompressor {
     webview.onDidReceiveMessage(
       (message: IPCMessage) => {
         const { signal, payload } = message;
+        logger.info("onDidReceiveMessage", message);
         switch (signal) {
           case WebviewIPCSignal.Compress:
             this.handleCompressFilesCommand(payload, webview);
             break;
+          case WebviewIPCSignal.CompressCurrent:
+            this.handleCompressCurrentCommand(payload, webview);
+            break;
           case WebviewIPCSignal.Save:
             this.handleSaveCommand(payload, webview);
+            break;
+          case WebviewIPCSignal.SaveCurrent:
+            this.handleSaveCurrentCommand(payload, webview);
             break;
           case WebviewIPCSignal.OpenFile:
             this.handleOpenFileCommand(payload);

@@ -72,16 +72,21 @@ export type WorkspaceNode = DirectoryStructureNode & ImageDirectoryStructureNode
 
 export enum WebviewIPCSignal {
   Compress = "webview.compress",
+  CompressCurrent = "webview.compressCurrent",
   Save = "webview.save",
+  SaveCurrent = "webview.saveCurrent",
   OpenFile = "webview.openFile",
   OpenFileInExplorer = "webview.openFileInExplorer",
 }
 
 export enum ExtensionIPCSignal {
   Init = "extension.init",
+  TinypngUsageUpdate = "extension.tinypngUsageUpdate",
   Compressed = "extension.compressed",
   AllCompressed = "extension.allCompressed",
+  CurrentCompressed = "extension.currentCompressed",
   Saved = "extension.saved",
+  CurrentSaved = "extension.currentSaved",
   AllSaved = "extension.AllSaved",
 }
 

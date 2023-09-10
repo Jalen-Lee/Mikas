@@ -1,5 +1,4 @@
-import { HTMLAttributes, useLayoutEffect, useMemo, useState } from "react";
-import React from "react";
+import React, { HTMLAttributes, useLayoutEffect, useMemo, useState } from "react";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import "rc-tree/assets/index.css";
 import Tree, { BasicDataNode, TreeProps } from "rc-tree";
@@ -11,11 +10,11 @@ import {
   FolderFilled,
   FolderOpenFilled,
   Loading3QuartersOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   PieChartOutlined,
   SaveOutlined,
-  ThunderboltOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined
+  ThunderboltOutlined
 } from "@ant-design/icons";
 import useLatest from "@hooks/useLatest.ts";
 import WorkspaceNodeTitle from "@components/workspace-node-title";
@@ -76,13 +75,16 @@ function App() {
 
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCompressing, setIsCompressing] = useState(false);
+  const [isSavingCurrent,setIsSavingCurrent] = useState(false)
+  const [isCurrentCompressing,setIsCurrentCompressing] = useState(false);
+  const [isSelectedCompressing, setIsSelectedCompressing] = useState(false);
 
   const { show: showWorkspaceContextMenu } = useContextMenu({
     id: WORKSPACE_CONTEXT_MENU_ID
   });
 
   const [isSidebarFold,setIsSidebarFold] = useState(true)
+  const [tinypngUsage,setTinypngUsage] = useState("--")
 
   const handleFileSelected: TreeProps["onSelect"] = (_key, payload) => {
     const node = payload.node as unknown as WorkspaceNode;
@@ -103,7 +105,7 @@ function App() {
   };
 
   const handleCompressCommand: HTMLAttributes<HTMLDivElement>["onClick"] = (e) => {
-    setIsCompressing(true);
+    setIsSelectedCompressing(true);
     selectedFiles.forEach((file) => {
       const node = workspaceNodeMap.get(file.key);
       if (node) {
@@ -134,6 +136,33 @@ function App() {
     workspaceLatest.current = newWorkspace;
   };
 
+  const handleCompressCurrentCommand = ()=>{
+    setIsCurrentCompressing(true)
+    const node = workspaceNodeMap.get(currentFile.key)
+    if (node) {
+      node.compressedState = CompressedState.PENDING;
+      node.optimizedFsPath = "";
+      node.optimizedSize = 0;
+      node.optimizedWebviewUri = "";
+      node.optimizedDimensions = { width: 0, height: 0 };
+      node.disableCheckbox = true;
+      workspaceNodeMap.set(node.key, node);
+      vscode.postMessage({
+        signal: WebviewIPCSignal.CompressCurrent,
+        payload: {
+          file: {
+            key: node.key,
+            fsPath: node.fsPath,
+            ext: node.parsedInfo.ext
+          }
+        }
+      });
+      const newWorkspace = [...workspace];
+      setWorkspace(newWorkspace);
+      workspaceLatest.current = newWorkspace;
+    }
+  }
+
   const handleSave: HTMLAttributes<HTMLDivElement>["onClick"] = (e) => {
     setIsSaving(true);
     vscode.postMessage({
@@ -149,6 +178,20 @@ function App() {
       }
     });
   };
+
+  const handleSaveCurrent = ()=>{
+    setIsSavingCurrent(true);
+    vscode.postMessage({
+      signal: WebviewIPCSignal.SaveCurrent,
+      payload: {
+        file: {
+          key: currentFile.key,
+          sourceFsPath: currentFile.fsPath,
+          tempFsPath: currentFile.optimizedFsPath
+        }
+      }
+    });
+  }
 
   const handleWorkspaceParse = (workspace: WorkspaceNode[]) => {
     const dummyHead = {
@@ -209,8 +252,8 @@ function App() {
         errorMessage: error
       };
     }
-    Object.assign(node, updatePayload);
-    Object.assign(selectedNode, updatePayload);
+    node && Object.assign(node, updatePayload);
+    selectedNode && Object.assign(selectedNode, updatePayload);
     if (currentFileLatest.current && key === currentFileLatest.current.key) {
       setCurrentFile({
         ...currentFileLatest.current,
@@ -221,6 +264,27 @@ function App() {
     setSelectedFiles([...selectedFilesLatest.current]);
     setWorkspace([...workspaceLatest.current]);
   };
+
+  const handleCurrentCompressed = (payload:{
+    status: ExecutedStatus;
+    error: string;
+    data: {
+      key: string;
+      sourceFsPath: string;
+      destinationFsPath: string;
+      optimizedWebviewUri: string;
+      optimizedSize: number;
+      optimizedDimensions: {
+        width: number;
+        height: number;
+        type: string;
+      };
+    };
+  })=>{
+    logger.info("handleCurrentCompressed!!!",payload)
+    handleCompressed(payload);
+    setIsCurrentCompressing(false);
+  }
 
   const handleSaved = (payload: {
     status: ExecutedStatus;
@@ -254,6 +318,44 @@ function App() {
     setWorkspaceParsedInfo(workspaceParsedInfo);
   };
 
+  const handleCurrentSaved = (payload: {
+    status: ExecutedStatus;
+    error: string;
+    data: {
+      status: ExecutedStatus;
+      key: string;
+      overwrite: boolean;
+      error: string;
+    };
+  })=>{
+    setIsSavingCurrent(false);
+    console.log("handleCurrentSaved",payload);
+    const { status, data } = payload;
+    const node = workspaceNodeMapLatest.current.get(data.key);
+    if (status === ExecutedStatus.Fulfilled) {
+      if(node){
+        if (data.status === ExecutedStatus.Fulfilled) {
+          node.compressedState = CompressedState.SAVED;
+          node.disableCheckbox = true;
+        } else {
+          node.compressedState = CompressedState.REJECTED;
+          node.errorMessage = data.error;
+        }
+      }
+    }else{
+      if(node){
+        node.compressedState = CompressedState.REJECTED;
+        node.errorMessage = data.error;
+      }
+    }
+    workspaceNodeMapLatest.current.set(data.key, node);
+    const { workspaceParsedInfo } = handleWorkspaceParse(workspaceLatest.current);
+    setSelectedFiles([...selectedFiles]);
+    node && setCurrentFile(node);
+    setWorkspace([...workspaceLatest.current]);
+    setWorkspaceParsedInfo(workspaceParsedInfo);
+  }
+
   const handleAllCompressed = (payload: {
     status: ExecutedStatus;
     error: string;
@@ -270,13 +372,16 @@ function App() {
       };
     }>;
   }) => {
-    setIsCompressing(false);
+    setIsSelectedCompressing(false);
   };
+
+  const handleTinypngUsageUpdate = (payload:{usage:string})=>{
+    setTinypngUsage(payload.usage)
+  }
 
   useLayoutEffect(() => {
     const handleReceiveMessage = (event) => {
       const message: IPCMessage = event.data;
-      logger.info(message.signal, message);
       const { signal, payload } = message;
       switch (signal) {
         case ExtensionIPCSignal.Init:
@@ -288,8 +393,17 @@ function App() {
         case ExtensionIPCSignal.AllCompressed:
           handleAllCompressed(payload);
           break;
+        case ExtensionIPCSignal.CurrentCompressed:
+          handleCurrentCompressed(payload);
+          break;
         case ExtensionIPCSignal.Saved:
           handleSaved(payload);
+          break;
+        case ExtensionIPCSignal.CurrentSaved:
+          handleCurrentSaved(payload);
+          break;
+        case ExtensionIPCSignal.TinypngUsageUpdate:
+          handleTinypngUsageUpdate(payload)
           break;
       }
     };
@@ -414,7 +528,7 @@ function App() {
         </main>
         <footer
           className="px-[12px] h-[44px] flex justify-between items-center border-t-[1px] border-solid border-[#414141] ">
-          <div className="flex gap-x-[12px] text-white items-center h-full" >
+          <div className="flex gap-x-[12px] text-white items-center h-full flex-shrink-0 mr-[12px]" >
            <div onClick={()=>setIsSidebarFold(!isSidebarFold)} className="text-[0px]">
              {
                isSidebarFold ? <MenuFoldOutlined className="text-[16px] cursor-pointer"/> : <MenuUnfoldOutlined className="text-[16px] cursor-pointer"/>
@@ -467,27 +581,49 @@ function App() {
               <PieChartOutlined className="text-[16px] cursor-pointer" />
             </Tooltip>
             <span>Currently selected: {selectedFiles.length}</span>|
-            <span>Tinypng Usage: {selectedFiles.length}</span>
+            <span>Tinypng Usage: {tinypngUsage}</span>
           </div>
-          <div className="flex gap-x-4">
+          <div className="flex gap-x-4 flex-shrink-0">
             <VSCodeButton
               appearance="primary"
-              disabled={isCompressing || (availableCompressSelectedFiles && !availableCompressSelectedFiles.length)}
+              disabled={isCurrentCompressing || !currentFile}
+              onClick={handleCompressCurrentCommand}
+            >
+              <div className="h-full flex items-center">
+                {isCurrentCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
+                  <ThunderboltOutlined className="text-white mx-[6px]" />}
+                Compress current
+              </div>
+            </VSCodeButton>
+            <VSCodeButton
+              appearance="primary"
+              disabled={!currentFile || currentFile.compressedState !== CompressedState.FULFILLED}
+              onClick={handleSaveCurrent}
+            >
+              <div className="h-full flex items-center">
+                {isSavingCurrent ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
+                  <SaveOutlined className="text-white mx-[6px]" />}
+                Save current
+              </div>
+            </VSCodeButton>
+            <VSCodeButton
+              appearance="primary"
+              disabled={isSelectedCompressing || (availableCompressSelectedFiles && !availableCompressSelectedFiles.length)}
               onClick={handleCompressCommand}
             >
               <div className="h-full flex items-center">
-                {isCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
+                {isSelectedCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
                   <ThunderboltOutlined className="text-white mx-[6px]" />}
-                Compress
+                Compress selected
               </div>
             </VSCodeButton>
             <VSCodeButton appearance="primary"
-                          disabled={isCompressing || isSaving || (availableSavedSelectedFiles && !availableSavedSelectedFiles.length)}
+                          disabled={isSelectedCompressing || isSaving || (availableSavedSelectedFiles && !availableSavedSelectedFiles.length)}
                           onClick={handleSave}>
               <div className="h-full flex items-center">
                 {isSaving ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
                   <SaveOutlined className="text-white mx-[6px]" />}
-                Save
+                Save selected
               </div>
             </VSCodeButton>
           </div>
