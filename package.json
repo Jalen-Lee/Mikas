@@ -3,7 +3,7 @@
   "displayName": "Mikas - Image Compressor",
   "description": "Helps you to compress commonly used image formats faster and better.Support PNG,JPG/JPEG,WebP,SVG,GIF,SVGA.",
   "homepage": "https://github.com/Jalen-Lee/Mikas/blob/main/README.md",
-  "version": "1.2.1",
+  "version": "1.5.1",
   "author": "JaylenLee",
   "publisher": "JaylenLee",
   "icon": "assets/icon.png",
@@ -147,7 +147,7 @@
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package",
+    "package": "vsce package --out release",
     "publish": "vsce publish"
   },
   "cross-os": {
