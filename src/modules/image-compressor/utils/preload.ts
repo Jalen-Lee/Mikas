@@ -28,6 +28,7 @@ logger.info("platform", getPlatform());
 logger.info("extensionFsPath", extensionFsPath);
 logger.info("vendorFsPath", vendorFsPath);
 logger.info("libvipsFsPath", libvipsFsPath);
+logger.info("prebuild", prebuild);
 
 (async () => {
   try {
