@@ -39,7 +39,7 @@ export class Logger {
     return this.levels.indexOf(level) >= this.levels.indexOf(this.logLevel);
   }
 
-  info(flag: string, message: any): void {
+  info(flag: string, message: any = ""): void {
     this.log("info", flag, message);
   }
 

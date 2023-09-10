@@ -39,6 +39,7 @@ logger.info("prebuild", prebuild);
     }
     fs.mkdirSync(vendorFsPath);
     await extractTarball(prebuild[platformAndArch]);
+    logger.info("vendor mounted!");
   } catch (e) {
     errorhandler(e);
   }
