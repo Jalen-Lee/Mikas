@@ -14,3 +14,9 @@ vsc-extension-quickstart.md
 .idea
 .DS_Store
 .mikas
+release
+test
+patches
+bin
+assets/native-node
+
