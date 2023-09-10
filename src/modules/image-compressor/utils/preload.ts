@@ -13,15 +13,15 @@ const vendorFsPath = path.resolve(extensionFsPath, "../vendor");
 const libvipsVersion = "8.14.4";
 const libvipsFsPath = path.resolve(extensionFsPath, `./assets/libvips-${libvipsVersion}`);
 const prebuild = {
-  "darwin-arm64v8": path.resolve(libvipsFsPath, "libvips-8.14.4-darwin-arm64v8.tar.br"),
-  "darwin-x64": path.resolve(libvipsFsPath, "libvips-8.14.4-darwin-x64.tar.br"),
-  "linux-arm64v8": path.resolve(libvipsFsPath, "libvips-8.14.4-linux-arm64v8.tar.br"),
-  "linux-armv6": path.resolve(libvipsFsPath, "libvips-8.14.4-linux-armv6.tar.br"),
-  "linux-armv7": path.resolve(libvipsFsPath, "libvips-8.14.4-linux-armv7.tar.br"),
-  "linux-x64": path.resolve(libvipsFsPath, "libvips-8.14.4-linux-x64.tar.br"),
-  "linuxmusl-arm64v8": path.resolve(libvipsFsPath, "libvips-8.14.4-linuxmusl-arm64v8.tar.br"),
-  "win32-arm64v8": path.resolve(libvipsFsPath, "libvips-8.14.4-win32-arm64v8.tar.br"),
-  "win32-x64": path.resolve(libvipsFsPath, "libvips-8.14.4-win32-x64.tar.br"),
+  "darwin-arm64v8": path.join(libvipsFsPath, "./libvips-8.14.4-darwin-arm64v8.tar.br"),
+  "darwin-x64": path.join(libvipsFsPath, "./libvips-8.14.4-darwin-x64.tar.br"),
+  "linux-arm64v8": path.join(libvipsFsPath, "./libvips-8.14.4-linux-arm64v8.tar.br"),
+  "linux-armv6": path.join(libvipsFsPath, "./libvips-8.14.4-linux-armv6.tar.br"),
+  "linux-armv7": path.join(libvipsFsPath, "libvips-8.14.4-linux-armv7.tar.br"),
+  "linux-x64": path.join(libvipsFsPath, "libvips-8.14.4-linux-x64.tar.br"),
+  "linuxmusl-arm64v8": path.join(libvipsFsPath, "libvips-8.14.4-linuxmusl-arm64v8.tar.br"),
+  "win32-arm64v8": path.join(libvipsFsPath, "libvips-8.14.4-win32-arm64v8.tar.br"),
+  "win32-x64": path.join(libvipsFsPath, "libvips-8.14.4-win32-x64.tar.br"),
 };
 
 logger.info("platform", getPlatform());
@@ -76,7 +76,7 @@ function getPlatform() {
 }
 
 async function extractTarball(tarPath: string) {
-  const versionedVendorPath = path.join(vendorFsPath, libvipsVersion, platformAndArch);
+  const versionedVendorPath = path.resolve(vendorFsPath, libvipsVersion, platformAndArch);
   await stream.pipeline(
     fs.createReadStream(tarPath),
     // @ts-ignore

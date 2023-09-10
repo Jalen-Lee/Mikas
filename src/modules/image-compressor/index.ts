@@ -700,9 +700,7 @@ export default class ImageCompressor {
         const tempParsedInfo = path.parse(file.tempFsPath);
         sourceUri = vscode.Uri.file(`${sourceParsedInfo.dir}/${tempParsedInfo.base}`);
       }
-      logger.info("handleSaveCurrentCommand1", payload);
       await vscode.workspace.fs.copy(tempUri, sourceUri, { overwrite: true });
-      logger.info("handleSaveCurrentCommand2", payload);
       senderWebview.postMessage({
         signal: ExtensionIPCSignal.CurrentSaved,
         payload: {
@@ -736,8 +734,6 @@ export default class ImageCompressor {
 
   private async createWebviewPanel() {
     const allWorkspaceUri = vscode.workspace.workspaceFolders.map((i) => i.uri);
-    logger.info("allWorkspaceUri", allWorkspaceUri);
-    logger.info("vscode.workspace.workspaceFile", vscode.workspace.workspaceFile);
     const panel = vscode.window.createWebviewPanel(CONFIG_SECTION, this.name, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
