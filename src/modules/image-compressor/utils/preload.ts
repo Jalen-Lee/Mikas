@@ -37,7 +37,9 @@ logger.info("prebuild", prebuild);
         recursive: true,
       });
     }
-    fs.mkdirSync(vendorFsPath);
+    fs.mkdirSync(vendorFsPath, {
+      recursive: true,
+    });
     await extractTarball(prebuild[platformAndArch]);
     logger.info("vendor mounted!");
   } catch (e) {

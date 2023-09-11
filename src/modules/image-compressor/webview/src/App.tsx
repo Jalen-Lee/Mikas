@@ -14,19 +14,11 @@ import {
   MenuUnfoldOutlined,
   PieChartOutlined,
   SaveOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import useLatest from "@hooks/useLatest.ts";
 import WorkspaceNodeTitle from "@components/workspace-node-title";
-import {
-  CompressedState,
-  ExecutedStatus,
-  ExtensionIPCSignal,
-  FileType,
-  IPCMessage,
-  WebviewIPCSignal,
-  WorkspaceNode
-} from "@typing";
+import { CompressedState, ExecutedStatus, ExtensionIPCSignal, FileType, IPCMessage, WebviewIPCSignal, WorkspaceNode } from "@typing";
 import logger from "@extension/utils/logger.ts";
 import ImageViewer from "@components/image-viewer";
 import { Item, ItemParams, Menu, Submenu, useContextMenu } from "react-contexify";
@@ -61,7 +53,7 @@ function App() {
     png: 0,
     jpg: 0,
     webp: 0,
-    svg: 0
+    svg: 0,
   });
 
   // The currently selected file
@@ -75,16 +67,16 @@ function App() {
 
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSavingCurrent,setIsSavingCurrent] = useState(false)
-  const [isCurrentCompressing,setIsCurrentCompressing] = useState(false);
+  const [isSavingCurrent, setIsSavingCurrent] = useState(false);
+  const [isCurrentCompressing, setIsCurrentCompressing] = useState(false);
   const [isSelectedCompressing, setIsSelectedCompressing] = useState(false);
 
   const { show: showWorkspaceContextMenu } = useContextMenu({
-    id: WORKSPACE_CONTEXT_MENU_ID
+    id: WORKSPACE_CONTEXT_MENU_ID,
   });
 
-  const [isSidebarFold,setIsSidebarFold] = useState(true)
-  const [tinypngUsage,setTinypngUsage] = useState("--")
+  const [isSidebarFold, setIsSidebarFold] = useState(true);
+  const [tinypngUsage, setTinypngUsage] = useState("--");
 
   const handleFileSelected: TreeProps["onSelect"] = (_key, payload) => {
     const node = payload.node as unknown as WorkspaceNode;
@@ -119,14 +111,14 @@ function App() {
       }
     });
     vscode.postMessage({
-      signal: WebviewIPCSignal.Compress,
+      signal: WebviewIPCSignal.CompressSelected,
       payload: {
         files: selectedFiles.map((file) => ({
           key: file.key,
           fsPath: file.fsPath,
-          ext: file.parsedInfo.ext
-        }))
-      }
+          ext: file.parsedInfo.ext,
+        })),
+      },
     });
     const newSelectedFiles = [...selectedFiles];
     const newWorkspace = [...workspace];
@@ -136,9 +128,9 @@ function App() {
     workspaceLatest.current = newWorkspace;
   };
 
-  const handleCompressCurrentCommand = ()=>{
-    setIsCurrentCompressing(true)
-    const node = workspaceNodeMap.get(currentFile.key)
+  const handleCompressCurrentCommand = () => {
+    setIsCurrentCompressing(true);
+    const node = workspaceNodeMap.get(currentFile.key);
     if (node) {
       node.compressedState = CompressedState.PENDING;
       node.optimizedFsPath = "";
@@ -153,33 +145,33 @@ function App() {
           file: {
             key: node.key,
             fsPath: node.fsPath,
-            ext: node.parsedInfo.ext
-          }
-        }
+            ext: node.parsedInfo.ext,
+          },
+        },
       });
       const newWorkspace = [...workspace];
       setWorkspace(newWorkspace);
       workspaceLatest.current = newWorkspace;
     }
-  }
+  };
 
   const handleSave: HTMLAttributes<HTMLDivElement>["onClick"] = (e) => {
     setIsSaving(true);
     vscode.postMessage({
-      signal: WebviewIPCSignal.Save,
+      signal: WebviewIPCSignal.SaveSelected,
       payload: {
         files: selectedFiles
           .filter((file) => file.compressedState === CompressedState.FULFILLED)
           .map((file) => ({
             key: file.key,
             sourceFsPath: file.fsPath,
-            tempFsPath: file.optimizedFsPath
-          }))
-      }
+            tempFsPath: file.optimizedFsPath,
+          })),
+      },
     });
   };
 
-  const handleSaveCurrent = ()=>{
+  const handleSaveCurrent = () => {
     setIsSavingCurrent(true);
     vscode.postMessage({
       signal: WebviewIPCSignal.SaveCurrent,
@@ -187,17 +179,17 @@ function App() {
         file: {
           key: currentFile.key,
           sourceFsPath: currentFile.fsPath,
-          tempFsPath: currentFile.optimizedFsPath
-        }
-      }
+          tempFsPath: currentFile.optimizedFsPath,
+        },
+      },
     });
-  }
+  };
 
   const handleWorkspaceParse = (workspace: WorkspaceNode[]) => {
     const dummyHead = {
       key: "$$root",
       title: "dummyHead",
-      children: workspace
+      children: workspace,
     };
     return workspaceParse(dummyHead as unknown as WorkspaceNode);
   };
@@ -243,13 +235,13 @@ function App() {
         compressedState: CompressedState.FULFILLED,
         optimizedFsPath: destinationFsPath,
         optimizedWebviewUri: optimizedWebviewUri,
-        disableCheckbox: false
+        disableCheckbox: false,
       };
     } else {
       updatePayload = {
         disableCheckbox: false,
         compressedState: CompressedState.REJECTED,
-        errorMessage: error
+        errorMessage: error,
       };
     }
     node && Object.assign(node, updatePayload);
@@ -257,7 +249,7 @@ function App() {
     if (currentFileLatest.current && key === currentFileLatest.current.key) {
       setCurrentFile({
         ...currentFileLatest.current,
-        ...node
+        ...node,
       });
     }
     workspaceNodeMapLatest.current.set(key, node);
@@ -265,7 +257,7 @@ function App() {
     setWorkspace([...workspaceLatest.current]);
   };
 
-  const handleCurrentCompressed = (payload:{
+  const handleCurrentCompressed = (payload: {
     status: ExecutedStatus;
     error: string;
     data: {
@@ -280,11 +272,10 @@ function App() {
         type: string;
       };
     };
-  })=>{
-    logger.info("handleCurrentCompressed!!!",payload)
+  }) => {
     handleCompressed(payload);
     setIsCurrentCompressing(false);
-  }
+  };
 
   const handleSaved = (payload: {
     status: ExecutedStatus;
@@ -327,13 +318,13 @@ function App() {
       overwrite: boolean;
       error: string;
     };
-  })=>{
+  }) => {
     setIsSavingCurrent(false);
-    console.log("handleCurrentSaved",payload);
+    console.log("handleCurrentSaved", payload);
     const { status, data } = payload;
     const node = workspaceNodeMapLatest.current.get(data.key);
     if (status === ExecutedStatus.Fulfilled) {
-      if(node){
+      if (node) {
         if (data.status === ExecutedStatus.Fulfilled) {
           node.compressedState = CompressedState.SAVED;
           node.disableCheckbox = true;
@@ -342,8 +333,8 @@ function App() {
           node.errorMessage = data.error;
         }
       }
-    }else{
-      if(node){
+    } else {
+      if (node) {
         node.compressedState = CompressedState.REJECTED;
         node.errorMessage = data.error;
       }
@@ -354,7 +345,7 @@ function App() {
     node && setCurrentFile(node);
     setWorkspace([...workspaceLatest.current]);
     setWorkspaceParsedInfo(workspaceParsedInfo);
-  }
+  };
 
   const handleAllCompressed = (payload: {
     status: ExecutedStatus;
@@ -375,9 +366,9 @@ function App() {
     setIsSelectedCompressing(false);
   };
 
-  const handleTinypngUsageUpdate = (payload:{usage:string})=>{
-    setTinypngUsage(payload.usage)
-  }
+  const handleTinypngUsageUpdate = (payload: { usage: string }) => {
+    setTinypngUsage(payload.usage);
+  };
 
   useLayoutEffect(() => {
     const handleReceiveMessage = (event) => {
@@ -403,7 +394,7 @@ function App() {
           handleCurrentSaved(payload);
           break;
         case ExtensionIPCSignal.TinypngUsageUpdate:
-          handleTinypngUsageUpdate(payload)
+          handleTinypngUsageUpdate(payload);
           break;
       }
     };
@@ -424,7 +415,7 @@ function App() {
   const handleShowWorkspaceContextMenu = (e) => {
     setCurrentRightClickFile(e.node);
     showWorkspaceContextMenu({
-      event: e.event
+      event: e.event,
     });
   };
   const handleWorkspaceContextMenuItemClick = (payload: ItemParams) => {
@@ -435,16 +426,16 @@ function App() {
         vscode.postMessage({
           signal: WebviewIPCSignal.OpenFile,
           payload: {
-            file: id === WorkspaceContextMenuItemId.OpenRawFile ? currentRightClickFile.fsPath : currentRightClickFile.optimizedFsPath
-          }
+            file: id === WorkspaceContextMenuItemId.OpenRawFile ? currentRightClickFile.fsPath : currentRightClickFile.optimizedFsPath,
+          },
         });
         break;
       case WorkspaceContextMenuItemId.OpenFileInExplorer:
         vscode.postMessage({
           signal: WebviewIPCSignal.OpenFileInExplorer,
           payload: {
-            file: currentRightClickFile.fsPath
-          }
+            file: currentRightClickFile.fsPath,
+          },
         });
         break;
     }
@@ -454,7 +445,7 @@ function App() {
     <>
       <section id="app" className="flex flex-col">
         <main className="h-[calc(100%-48px)] flex-1 flex">
-          <Allotment >
+          <Allotment>
             <Allotment.Pane preferredSize="30%" visible={isSidebarFold} minSize={300} maxSize={500}>
               <div className="relative h-full">
                 <div className="h-full px-[12px] pb-[12px] bg-[#333333] w-full overflow-auto flex flex-col relative">
@@ -471,8 +462,7 @@ function App() {
                           if (props.isLeaf) {
                             return null;
                           }
-                          return props.expanded ? <CaretDownOutlined className="text-[#94a3ad]" /> :
-                            <CaretRightOutlined className="text-[#94a3ad]" />;
+                          return props.expanded ? <CaretDownOutlined className="text-[#94a3ad]" /> : <CaretRightOutlined className="text-[#94a3ad]" />;
                         }}
                         className="h-full"
                         onRightClick={handleShowWorkspaceContextMenu}
@@ -504,9 +494,14 @@ function App() {
             <Allotment.Pane preferredSize="35%" minSize={300}>
               <div className="h-full flex-1 flex justify-center items-center px-[20px]">
                 {currentFile ? (
-                  <ImageViewer src={currentFile.sourceWebviewUri} size={currentFile.size} title="Raw"
-                               dimensions={currentFile.dimensions} ext={currentFile.parsedInfo.ext}
-                               className="flex-1 h-full" />
+                  <ImageViewer
+                    src={currentFile.sourceWebviewUri}
+                    size={currentFile.size}
+                    title="Raw"
+                    dimensions={currentFile.dimensions}
+                    ext={currentFile.parsedInfo.ext}
+                    className="flex-1 h-full"
+                  />
                 ) : null}
               </div>
             </Allotment.Pane>
@@ -526,14 +521,11 @@ function App() {
             </Allotment.Pane>
           </Allotment>
         </main>
-        <footer
-          className="px-[12px] h-[44px] flex justify-between items-center border-t-[1px] border-solid border-[#414141] ">
-          <div className="flex gap-x-[12px] text-white items-center h-full flex-shrink-0 mr-[12px]" >
-           <div onClick={()=>setIsSidebarFold(!isSidebarFold)} className="text-[0px]">
-             {
-               isSidebarFold ? <MenuFoldOutlined className="text-[16px] cursor-pointer"/> : <MenuUnfoldOutlined className="text-[16px] cursor-pointer"/>
-             }
-           </div>
+        <footer className="px-[12px] h-[44px] flex justify-between items-center border-t-[1px] border-solid border-[#414141] ">
+          <div className="flex gap-x-[12px] text-white items-center h-full flex-shrink-0 mr-[12px]">
+            <div onClick={() => setIsSidebarFold(!isSidebarFold)} className="text-[0px]">
+              {isSidebarFold ? <MenuFoldOutlined className="text-[16px] cursor-pointer" /> : <MenuUnfoldOutlined className="text-[16px] cursor-pointer" />}
+            </div>
             {/*@ts-ignore*/}
             <Tooltip
               className="text-[0px]"
@@ -580,49 +572,38 @@ function App() {
             >
               <PieChartOutlined className="text-[16px] cursor-pointer" />
             </Tooltip>
-            <span>Currently selected: {selectedFiles.length}</span>|
-            <span>Tinypng Usage: {tinypngUsage}</span>
+            <span>Currently selected: {selectedFiles.length}</span>|<span>Tinypng Usage: {tinypngUsage}</span>
           </div>
           <div className="flex gap-x-4 flex-shrink-0">
-            <VSCodeButton
-              appearance="primary"
-              disabled={isCurrentCompressing || !currentFile}
-              onClick={handleCompressCurrentCommand}
-            >
+            {/* <VSCodeButton appearance="primary" disabled={isCurrentCompressing || !currentFile} onClick={handleCompressCurrentCommand}>
               <div className="h-full flex items-center">
-                {isCurrentCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
-                  <ThunderboltOutlined className="text-white mx-[6px]" />}
+                {isCurrentCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> : <ThunderboltOutlined className="text-white mx-[6px]" />}
                 Compress current
               </div>
             </VSCodeButton>
-            <VSCodeButton
-              appearance="primary"
-              disabled={!currentFile || currentFile.compressedState !== CompressedState.FULFILLED}
-              onClick={handleSaveCurrent}
-            >
+            <VSCodeButton appearance="primary" disabled={!currentFile || currentFile.compressedState !== CompressedState.FULFILLED} onClick={handleSaveCurrent}>
               <div className="h-full flex items-center">
-                {isSavingCurrent ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
-                  <SaveOutlined className="text-white mx-[6px]" />}
+                {isSavingCurrent ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> : <SaveOutlined className="text-white mx-[6px]" />}
                 Save current
               </div>
-            </VSCodeButton>
+            </VSCodeButton> */}
             <VSCodeButton
               appearance="primary"
               disabled={isSelectedCompressing || (availableCompressSelectedFiles && !availableCompressSelectedFiles.length)}
               onClick={handleCompressCommand}
             >
               <div className="h-full flex items-center">
-                {isSelectedCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
-                  <ThunderboltOutlined className="text-white mx-[6px]" />}
+                {isSelectedCompressing ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> : <ThunderboltOutlined className="text-white mx-[6px]" />}
                 Compress selected
               </div>
             </VSCodeButton>
-            <VSCodeButton appearance="primary"
-                          disabled={isSelectedCompressing || isSaving || (availableSavedSelectedFiles && !availableSavedSelectedFiles.length)}
-                          onClick={handleSave}>
+            <VSCodeButton
+              appearance="primary"
+              disabled={isSelectedCompressing || isSaving || (availableSavedSelectedFiles && !availableSavedSelectedFiles.length)}
+              onClick={handleSave}
+            >
               <div className="h-full flex items-center">
-                {isSaving ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> :
-                  <SaveOutlined className="text-white mx-[6px]" />}
+                {isSaving ? <Loading3QuartersOutlined className="text-white mx-[6px]" spin /> : <SaveOutlined className="text-white mx-[6px]" />}
                 Save selected
               </div>
             </VSCodeButton>

@@ -71,9 +71,9 @@ export interface ImageDirectoryStructureNode {
 export type WorkspaceNode = DirectoryStructureNode & ImageDirectoryStructureNode;
 
 export enum WebviewIPCSignal {
-  Compress = "webview.compress",
+  CompressSelected = "webview.compressSelected",
   CompressCurrent = "webview.compressCurrent",
-  Save = "webview.save",
+  SaveSelected = "webview.saveSelected",
   SaveCurrent = "webview.saveCurrent",
   OpenFile = "webview.openFile",
   OpenFileInExplorer = "webview.openFileInExplorer",
