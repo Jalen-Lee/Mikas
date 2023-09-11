@@ -1,7 +1,6 @@
 import { FallOutlined, SyncOutlined, WarningFilled, CheckCircleFilled } from "@ant-design/icons";
 import { CompressedState, WorkspaceNode } from "@typing";
-import { Tooltip } from "react-tippy";
-import "react-tippy/dist/tippy.css";
+import { Tooltip } from "antd";
 import { calcReducedRate } from "@utils";
 
 export default function WorkspaceNodeTitle(props: WorkspaceNode) {
@@ -25,8 +24,7 @@ export default function WorkspaceNodeTitle(props: WorkspaceNode) {
         )}
         {compressedState === CompressedState.REJECTED && (
           <>
-            {/*@ts-ignore*/}
-            <Tooltip title={errorMessage} position="bottom" trigger="mouseenter" arrow={true} distance={5}>
+            <Tooltip title={errorMessage} placement="bottom">
               <div className="flex items-center">
                 <WarningFilled className="text-red-500 mr-[6px]" />
                 <span>Error occurred</span>

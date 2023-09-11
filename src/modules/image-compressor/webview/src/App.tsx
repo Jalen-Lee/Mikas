@@ -1,11 +1,10 @@
 import React, { HTMLAttributes, useLayoutEffect, useMemo, useState } from "react";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
-import "rc-tree/assets/index.css";
-import Tree, { BasicDataNode, TreeProps } from "rc-tree";
+import { Tree, Tooltip } from "antd";
+import type { DataNode, TreeProps } from "antd/es/tree";
 import { formatFileSize, formatReducedRate, vscode, workspaceParse, WorkspaceParsedInfo } from "@utils";
 import {
   CaretDownOutlined,
-  CaretRightOutlined,
   FileImageFilled,
   FolderFilled,
   FolderOpenFilled,
@@ -24,10 +23,7 @@ import ImageViewer from "@components/image-viewer";
 import { Item, ItemParams, Menu, Submenu, useContextMenu } from "react-contexify";
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
-
 import "react-contexify/dist/ReactContexify.css";
-import { Tooltip } from "react-tippy";
-import { DataNode } from "rc-tree/es/interface";
 
 const WORKSPACE_CONTEXT_MENU_ID = "workspace-context-menu";
 
@@ -57,12 +53,12 @@ function App() {
   });
 
   // The currently selected file
-  const [currentFile, setCurrentFile] = useState<BasicDataNode & WorkspaceNode>();
+  const [currentFile, setCurrentFile] = useState<DataNode & WorkspaceNode>();
   const currentFileLatest = useLatest(currentFile);
-  const [currentRightClickFile, setCurrentRightClickFile] = useState<BasicDataNode & WorkspaceNode>();
+  const [currentRightClickFile, setCurrentRightClickFile] = useState<DataNode & WorkspaceNode>();
 
   // List of currently selected files
-  const [selectedFiles, setSelectedFiles] = useState<Array<BasicDataNode & WorkspaceNode>>([]);
+  const [selectedFiles, setSelectedFiles] = useState<Array<DataNode & WorkspaceNode>>([]);
   const selectedFilesLatest = useLatest(selectedFiles);
 
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
@@ -462,12 +458,13 @@ function App() {
                           if (props.isLeaf) {
                             return null;
                           }
-                          return props.expanded ? <CaretDownOutlined className="text-[#94a3ad]" /> : <CaretRightOutlined className="text-[#94a3ad]" />;
+                          return <CaretDownOutlined className="text-[#94a3ad] !text-[18px]" />;
                         }}
                         className="h-full"
                         onRightClick={handleShowWorkspaceContextMenu}
                         onSelect={handleFileSelected}
                         onCheck={handleFileChecked}
+                        showIcon={true}
                         icon={(props) => {
                           // @ts-ignore
                           const { type } = props;
@@ -526,12 +523,9 @@ function App() {
             <div onClick={() => setIsSidebarFold(!isSidebarFold)} className="text-[0px]">
               {isSidebarFold ? <MenuFoldOutlined className="text-[16px] cursor-pointer" /> : <MenuUnfoldOutlined className="text-[16px] cursor-pointer" />}
             </div>
-            {/*@ts-ignore*/}
             <Tooltip
-              className="text-[0px]"
               trigger="click"
-              hideOnClick={true}
-              html={
+              title={
                 <div className="min-w-[200px]">
                   <ul className="w-full flex flex-col gap-y-[6px]">
                     <li className="flex items-center justify-between">

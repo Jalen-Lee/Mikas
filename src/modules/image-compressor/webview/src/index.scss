@@ -38,49 +38,57 @@ body{
   background: #1e1e1e;
 }
 
-.rc-tree{
-  .rc-tree-list{
-    .rc-tree-list-holder{
-      .rc-tree-treenode{
+.ant-tree{
+  background:none!important;
+  .ant-tree-list{
+    .ant-tree-list-holder{
+      .ant-tree-treenode{
+        width: 100%;
         display: flex!important;
         align-items: center!important;
         &:hover{
           background: #4b4b4b!important;
         }
-        &.rc-tree-treenode-selected{
+        &.ant-tree-treenode-selected{
           background: #4b4b4b!important;
         }
-        .rc-tree-node-selected{
+        .ant-tree-node-selected{
           background:none!important;
           border: none!important;
           box-shadow: none!important;
           opacity: 1!important;
         }
-        .rc-tree-switcher{
+        .ant-tree-switcher{
           background-image: none!important;
           background-position: initial;
           display: flex;
           align-items: center;
         }
-        .rc-tree-node-content-wrapper{
+        .ant-tree-node-content-wrapper{
           display: flex;
           align-items: center;
-          .rc-tree-iconEle{
+          .ant-tree-iconEle{
             display: flex;
             align-items: center;
           }
         }
-        .rc-tree-node-content-wrapper{
+        .ant-tree-node-content-wrapper{
           display: flex;
           flex: 1;
           padding-left: 4px!important;
-          .rc-tree-title{
+          .ant-tree-title{
             display: flex;
             flex: 1;
           }
         }
       }
     }
+  }
+  .ant-tree-checkbox-disabled .ant-tree-checkbox-inner{
+    border-color: rgba(255,255,255,.6);
+  }
+  .ant-tree-checkbox-disabled .ant-tree-checkbox-inner:after{
+    border-color: rgba(255,255,255,.6);
   }
 }
 
