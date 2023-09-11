@@ -35,6 +35,7 @@ export default function WorkspaceNodeTitle(props: WorkspaceNode) {
         {compressedState === CompressedState.SAVED && (
           <>
             <CheckCircleFilled className="text-emerald-400 mr-[6px]" />
+            {<span>{calcReducedRate(size, optimizedSize)}%</span>}
           </>
         )}
       </div>
