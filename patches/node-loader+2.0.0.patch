@@ -1,0 +1,25 @@
+diff --git a/node_modules/node-loader/dist/index.js b/node_modules/node-loader/dist/index.js
+index 328eb3b..dce067d 100644
+--- a/node_modules/node-loader/dist/index.js
++++ b/node_modules/node-loader/dist/index.js
+@@ -23,9 +23,18 @@ function loader(content) {
+     content
+   });
+   this.emitFile(name, content);
+-  return `
++//   return `
++// try {
++//   process.dlopen(module, __dirname + require("path").sep + __webpack_public_path__ + ${JSON.stringify(name)}${typeof options.flags !== "undefined" ? `, ${JSON.stringify(options.flags)}` : ""});
++// } catch (error) {
++//   throw new Error('node-loader:\\n' + error);
++// }
++// `;
++return `
+ try {
+-  process.dlopen(module, __dirname + require("path").sep + __webpack_public_path__ + ${JSON.stringify(name)}${typeof options.flags !== "undefined" ? `, ${JSON.stringify(options.flags)}` : ""});
++  const _nodePath = require("path").resolve(__dirname,__webpack_public_path__,${JSON.stringify(name)}${typeof options.flags !== "undefined" ? `, ${JSON.stringify(options.flags)}` : ""});
++  console.log("_nodePath",_nodePath);
++  process.dlopen(module, _nodePath);
+ } catch (error) {
+   throw new Error('node-loader:\\n' + error);
+ }

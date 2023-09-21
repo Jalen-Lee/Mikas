@@ -136,6 +136,7 @@
     ]
   },
   "scripts": {
+    "vscode:uninstall": "node ./scripts/uninstall.js",
     "postinstall": "cross-os postinstall",
     "vscode:prepublish": "npm run build",
     "compile": "webpack",
