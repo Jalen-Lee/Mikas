@@ -7,9 +7,17 @@ import * as detectLibc from "detect-libc";
 import logger from "./logger";
 
 const env = process.env;
+let userPath;
+
+if (getPlatform().includes("win")) {
+  userPath = process.env.HOME;
+} else {
+  userPath = process.env.USERPROFILE;
+}
+
 const platformAndArch = getPlatform();
 const extensionFsPath = path.resolve(__dirname, "../");
-const vendorFsPath = path.resolve(extensionFsPath, "../vendor");
+const vendorFsPath = path.resolve(userPath, ".vscode/extensions/vendor");
 const libvipsVersion = "8.14.4";
 const libvipsFsPath = path.resolve(extensionFsPath, `./assets/libvips-${libvipsVersion}`);
 const prebuild = {
