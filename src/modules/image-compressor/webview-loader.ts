@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as cheerio from "cheerio";
 import * as path from "path";
 import * as util from "util";
-import { getNonce, getWebviewUri } from "./utils";
+import { getNonce, getWebviewUri, isDev } from "./utils";
 import logger from "./utils/logger";
 
 const readFile = util.promisify(fs.readFile);
@@ -48,7 +48,12 @@ export default class WebviewLoader {
   }
 
   private getHTMLContent() {
-    const htmlPath = path.join(this.vsCodeContext.extensionPath, ...this.htmlEntry);
+    const htmlPath = path.resolve(this.vsCodeContext.extensionPath, ...this.htmlEntry);
+    console.log("process.env.NODE_ENV", process.env.NODE_ENV);
+    console.log("isDev", isDev);
+    console.log("extensionPath", this.vsCodeContext.extensionPath);
+    console.log("htmlPath", htmlPath);
+
     return readFile(htmlPath, {
       encoding: "utf-8",
     });
