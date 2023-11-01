@@ -5,6 +5,7 @@ import { FileType, type DirectoryStructureNode, ImageDirectoryStructureNode, Com
 import * as util from "util";
 import * as imageSize from "image-size";
 import * as minimatch from "minimatch";
+import * as os from "os";
 
 const sizeOf = util.promisify(imageSize.default);
 
@@ -231,4 +232,18 @@ export function detectContentType(buffer: Buffer) {
     return ICO;
   }
   return null;
+}
+
+export function getOperatingSystem() {
+  const platform = os.platform();
+
+  if (platform === "win32") {
+    return "Windows";
+  } else if (platform === "darwin") {
+    return "macOS";
+  } else if (platform === "linux") {
+    return "Linux";
+  } else {
+    return "Unknown";
+  }
 }

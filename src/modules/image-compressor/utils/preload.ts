@@ -5,15 +5,20 @@ import * as stream from "stream";
 import * as zlib from "zlib";
 import * as detectLibc from "detect-libc";
 import logger from "./logger";
+import { getOperatingSystem } from ".";
 
 const env = process.env;
 let userPath;
 
-if (getPlatform().includes("win")) {
-  userPath = process.env.HOME;
-} else {
+console.log("process.env", env);
+
+if (getOperatingSystem() === "Windows") {
   userPath = process.env.USERPROFILE;
+} else {
+  userPath = process.env.HOME;
 }
+
+console.log("userPath", userPath);
 
 const platformAndArch = getPlatform();
 const extensionFsPath = path.resolve(__dirname, "../");
