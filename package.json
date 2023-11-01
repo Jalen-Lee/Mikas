@@ -148,7 +148,7 @@
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package --out release",
+    "package": "npm version patch && vsce package --out release",
     "publish": "vsce publish"
   },
   "cross-os": {
