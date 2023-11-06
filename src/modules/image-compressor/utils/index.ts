@@ -7,7 +7,7 @@ import * as imageSize from "image-size";
 import * as minimatch from "minimatch";
 import * as os from "os";
 
-const sizeOf = util.promisify(imageSize.default);
+export const sizeOf = util.promisify(imageSize.default);
 
 export const isDev = process.env.NODE_ENV === "development";
 export const isProduction = process.env.NODE_ENV === "production";
